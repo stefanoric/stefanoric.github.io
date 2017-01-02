@@ -1,0 +1,86 @@
+---
+layout: post
+title: A RPN Calculator in F#
+date: 2010-10-01 11:22:36.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- ".NET"
+- F#
+tags:
+- algorithm
+- F#
+- programming praxis
+meta:
+  _edit_last: '1'
+  ks_metadata: a:7:{s:4:"lang";s:2:"en";s:8:"keywords";s:52:"fsharp,f#,reverse polish
+    notation,programming praxis";s:19:"keywords_autoupdate";s:1:"0";s:11:"description";s:51:"A
+    simple implementation of an RPN calculator in F#.";s:22:"description_autoupdate";s:1:"0";s:5:"title";s:22:"A
+    RPN Calculator in F#";s:6:"robots";s:12:"index,follow";}
+  _aioseop_title: A RPN Calculator in F#
+  _aioseop_description: A simple implementation of an RPN calculator in F#.
+  dsq_thread_id: '149577233'
+  _wp_old_slug: ''
+  wpsd_autopost: '1'
+  _aioseop_keywords: fsharp, f#, reverse polish notation, programming praxis
+---
+<p>While continuing my journey in F#, after playing with Project Eulero problems for a few weeks, 
+  I have come across another excellent  excercise site which goes under the name of 
+  <a href="http://programmingpraxis.com/" target="_blank">Programming Praxis</a>.</p>
+<p>The first exercise requires to implement a simple calculator using 
+  <a href="http://en.wikipedia.org/wiki/Reverse_Polish_notation" target="_blank">Reverse Polish Notation (RPN)</a>.</p>
+<p>Here follows a simple solution to the problem. Operands are pushed 
+  onto the stack until an operator is found: at that point the last two operands are popped from the stack, 
+  the operator is applied to them and the result is pushed back on the stack.</p>
+
+{% highlight F# %}
+
+let is_operator c =
+    match c with
+        | "+" | "-" | "*" | "/"  -> true
+        | _ -> false
+
+let calculate left operator right =
+    match operator with
+        | "+" -> left + right
+        | "-" -> left - right
+        | "*" -> left * right
+        | "/" -> left / right
+        | _ -> failwith "Unknown operator"
+
+let proc (item:string) (stack:System.Collections.Generic.Stack<double>) =
+    if is_operator item then
+        let r = stack.Pop() 
+        let l = stack.Pop() 
+        let result = calculate l item r
+        stack.Push result
+    else
+        stack.Push(System.Convert.ToDouble(item))
+
+let evaluate (expression:string) =
+    let stack = new System.Collections.Generic.Stack<double>()
+    let items = expression.Split([|' ' |]) 
+    Array.iter (fun i -> proc i stack) items
+    stack.Pop()
+{% endhighlight %}
+
+<ul>
+<li>We first define a simple function to check whether a given string is to be interpreted as an arithmetic operand. 
+  As you can see, we only support basic operators, nothing too fancy.</li>
+<li>We then define a function which takes a double, a string (representing an operator) and another double, 
+  and returns the result of applying the given operator to the two numbers.</li>
+<li>The <code>proc</code> function takes a string, which represent either an operand or an operator, and a stack of operands.
+<p>If the item contained in the string is an operator, two operands are popped from the stack: the first pop 
+  is for the right side operand and the second pop is for the left operand; hence, the operator is applied 
+  to the two operands and the result is pushed back onto the stack.</p>
+<p>Otherwise, if it's an operand, it's first converted from the string format and pushed onto the stack.</li>
+<li>Finally, the entrance point to the program is defined with the <code>evaluate</code> function, which
+<ul>
+<li>accepts a string containing the overall expression (such as "1 2 + 4 / 5 * 6 -")</li>
+<li>splits the string into an array of token strings</li>
+<li>feed each token into the <code>proc</code> function</li>
+<li>finally pops the stack with the last operand to yield the result of the operation.</li>
+</ul>
+</li>
+</ul>

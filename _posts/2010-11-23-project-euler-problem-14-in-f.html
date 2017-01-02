@@ -1,0 +1,111 @@
+---
+layout: post
+title: Project Euler Problem 14 in F#
+date: 2010-11-23 14:35:34.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- ".NET"
+- F#
+tags:
+- F#
+- functional
+meta:
+  _edit_last: '1'
+  _aioseop_title: Project Euler Problem 14 in F#
+  _aioseop_description: A solution to Project Euler problem 14 in F#
+  _aioseop_keywords: f#,fsharp,euler, collatz, algorithm
+  dsq_thread_id: '178051260'
+  _wp_old_slug: ''
+---
+<p><a href="http://projecteuler.net/index.php?section=problems&amp;id=14">Project Euler Problem 14</a> introduces 
+the fascinating <a href="http://en.wikipedia.org/wiki/Collatz_conjecture">Collatz Conjecture</a>:</p>
+<blockquote><p>Take any natural number n. If n is even, divide it by 2 to get n / 2, if n is odd multiply it by 3 and add 1 to obtain 3n + 1. Repeat the process indefinitely. The conjecture is that no matter what number you start with, you will always eventually reach 1.</p></blockquote>
+<p>The Euler problem to be resolved is phrased as follows:</p>
+<blockquote>
+<p>The following iterative sequence is defined for the set of positive integers:</p>
+<p>n -> n/2 (n is even) <br />
+   n -> 3n + 1 (n is odd)</p>
+<p>Using the rule above and starting with 13, we generate the following sequence:</p>
+<p>13 -> 40 -> 20 -> 10 -> 5 -> 16 -> 8 -> 4 -> 2 -> 1</p>
+<p>It can be seen that this sequence (starting at 13 and finishing at 1) contains 10 terms. 
+    Although it has not been proved yet (Collatz Problem), it is thought that all starting numbers finish at 1.</p>
+<p>Which starting number, under one million, produces the longest chain?</p>
+</blockquote>
+<p>As with many other Project Euler problems, we are requested to generate a sequence 
+    (in this case a sequence of "Collatz") and to single out one item matching a certain criteria. 
+    In this particular case, we need to create Collatz sequences for all numbers under 1 million and find out the longest one.</p>
+
+<h2>Solution</h2>
+<p>The basic algorithm has the following shape:</p>
+
+{% highlight F# %}
+    let is_odd x = 
+    x % 2L = 1L
+
+let rec naive_sequence n (partial:int64 list) =
+    match n with
+        | 1L -> partial @ [1L]
+        | x when is_odd x -> naive_sequence ((3L*x) + 1L) (partial @ [n])
+        |_ -> naive_sequence (n/2L) (partial @ [n])
+{% endhighlight %}
+
+<p>Using this recursive function, we could easily generate Collatz sequences for arbitrarily large numbers. But the performance would soon degrade when we start building sequence for numbers bigger than about 10 thousands.</p>
+<p>In the process of generating all the sequences from 1 to 1 million, however, it&rsquo;s easy to see that for each sequence that we build, there are a lot of subsequences that are identical, which are being calculated over and over.</p>
+<p>Consider for example the two sequences having 5 and 24 as starting numbers respectively:</p>
+<p><strong>5 -> 16 -> 8 -> 4 -> 2 -> 1</strong></p>
+<p>24 -> 12 -> 6 -> 3 -> 10 -> <strong>5 -> 16 -> 8 -> 4 -> 2 -> 1</strong></p>
+<p>As you can see, after a few iterations the sequence starting from 24 converges to the sequence starting at 5, 
+    which we have already calculated! (see <a href="http://upload.wikimedia.org/wikipedia/commons/a/ad/Collatz-graph-all-30-no27.svg">this image</a>
+     from Wikipedia for a pictorial representation of this behavior)</p>
+<p>As you would have guessed by now, the key to solve this problem is precisely <em>caching</em> 
+the subsequences that are being calculated, so that the partial results can be reused for subsequent iterations.</p>
+<p>So, with these considerations in mind, we can have a look at the final solution:</p>
+
+{% highlight F# %}
+open System.Collections.Generic
+
+let is_odd x = 
+    x % 2L = 1L
+
+let rec collatz_sequence n (partial:int64 list) (cache: IDictionary<int64, int64 list>) =
+    if cache.ContainsKey(n) then
+        let result = partial @ cache.[n]
+        let sequence_starter = List.head result
+        if not(cache.ContainsKey(sequence_starter)) then
+            cache.Add(sequence_starter, result) |> ignore
+        result 
+    else
+        match n with
+        | 1L ->
+            let result = partial @ [1L]
+            let sequence_starter = List.head result
+            cache.Add(sequence_starter, result) |> ignore
+            result 
+        | n when is_odd n -> collatz_sequence ((3L*n) + 1L) (partial @ [n]) cache
+        | _ -> collatz_sequence (n/2L) (partial @ [n]) cache
+
+let sequence_cache = new Dictionary<int64, int64 list>()
+
+let calculate_sequence n =
+    collatz_sequence n [] sequence_cache
+
+let max_sequence_lengths (max:int64) =
+    let all_sequences = [for i in 1L..max -> calculate_sequence i]
+    let lengths = List.map List.length all_sequences
+    let max = List.max lengths
+    let max_index = List.findIndex (fun (x:int64 list) -> x.Length = max) all_sequences
+    max_index + 1L
+{% endhighlight %}
+
+<p>As you can see, the basic pattern of the algorithm is still the same. 
+    However, we have added a cache to store partial results which dramatically improve the performances 
+    (this version resolve the problem on my laptop in about 7 seconds).</p>
+<p>The last function <code>max_sequence_lengths</code> is the main loop generating all the sequences, 
+calculating the lengths and picking the sequence with the highest length.</p>
+<p>Caching partial results is a common theme in functional programming, and is 
+    called <a href="http://en.wikipedia.org/wiki/Memoization">memoization</a>. The example provided above is 
+    not one of the cleanest examples of memoization. 
+    It turns out that combining memoization and tail recursion is a 
+    <a href="http://stackoverflow.com/questions/3459422/combine-memoization-and-tail-recursion">tricky problem</a>.</p>

@@ -1,0 +1,142 @@
+---
+layout: post
+title: Ninject Mini Tutorial - Part 1
+date: 2011-01-21 14:12:23.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- ".NET"
+- C#
+- Design and Patterns
+tags:
+- C#
+- Design and Patterns
+- IoC
+- ninject
+- OOP
+meta:
+  _aioseop_keywords: ninject, tutorial, how-to, dependency injection, ioc, inversion
+    of control, kernel,
+  _edit_last: '1'
+  wpsd_autopost: '1'
+  _aioseop_title: Ninject Mini Tutorial - Part 1
+  _aioseop_description: A mini tutorial for Ninject, a .NET IoC container
+  dsq_thread_id: '215073273'
+  _wp_old_slug: ''
+  dsq_needs_sync: '1'
+---
+<h2>What Is Ninject</h2>
+<p>There are several Inversion of Control (IoC) containers for .NET to pick from (such as <a href="http://stw.castleproject.org/Windsor.MainPage.ashx">Castle Windsor</a>, <a href="http://structuremap.net/structuremap/index.html">Structure Map</a> and <a href="http://msdn.microsoft.com/en-us/library/ff663144.aspx">Microsoft Unity</a>, just to name just a few).&nbsp; <a href="http://ninject.org/">Ninject</a> is one of the newest entries in the arena, but it&rsquo;s now sufficiently stable at version 2.0.</p>
+<p>Ninject tries to focus on &ldquo;<em>simplicity and ease of use</em>&rdquo;, removing features that are not deemed necessary (to the point that XML configuration is not offered out-of-the box).</p>
+<p>In this and following posts we&rsquo;ll explore some example of how to use Ninject. I assume that you are somehow familiar with the basic concepts of <em>Inversion of Control</em> and <em>Dependency Injection</em>; if that&rsquo;s not the case, you should consider having a look at this <a href="http://en.wikipedia.org/wiki/Inversion_of_control">wikipedia entry</a> (better yet, 
+take some time and read Martin Fowler <a href="http://martinfowler.com/articles/injection.html">famous post</a> on the subject).</p>
+
+<h2>Setup</h2>
+<p>Installing Ninject is quite easy: you simply download the pre-built DLLs it from <a href="http://ninject.org/download">here</a>. Since Ninject is open source, you can also get the sources from <a href="https://github.com/ninject/ninject">github</a> and build it on your own.</p>
+<p>On my Windows machine, I have copied the DLLs on <em>C:\Ninject</em>.</p>
+<p><b>UPDATE</b>: <i>nowadays you would obviosly use NuGet.</i></p>
+
+<h2>Getting your Feet Wet With Ninject</h2>
+<p>Once you have Ninject DLLs somewhere on your hard-drive, in order to get started you only need to 
+    reference them (typically you only need to reference <tt>NInject.dll</tt> ). 
+    As we said, no XML configuration is required.</p>
+<p>Let&rsquo;s see a few basic examples (the complete source code with unit tests I 
+    present in this series are available on <a href="https://github.com/stefanoric/NINJECTTUTORIAL">github</a>).
+    </p>
+
+
+<h3>"Hello, Ninject"</h3>
+<p>Suppose we have a fairly simple service to calculate the taxes for a given amount, 
+    defined in an <code>ITaxCalculator</code> interface:</p>
+
+{% highlight c# %}
+decimal CalculateTax(decimal gross)
+{% endhighlight %}
+
+<p>and a trivial implementation <code>TaxCalculator</code> as follows:</p>
+
+{% highlight c# %}
+public class TaxCalculator : ITaxCalculator
+{
+    private readonly decimal _rate;
+
+    public TaxCalculator(decimal rate)              
+    {
+        _rate = rate;
+    }
+
+    public decimal CalculateTax(decimal amount)
+    {
+        return Math.Round(_rate * amount, 2);
+    }
+}
+{% endhighlight %}
+
+<p>Now, one or more classes might need to use an <code>ITaxCalculator</code> implementation to fulfill their responsibility (such as calculating the total price for a shopping cart). We can say that an implementation of <code>ITaxCalculator</code> is a <em>dependency</em> to them.</p>
+<p>Like many IoC containers, Ninject uses a central object (which it calls the <em>kernel</em>) to provide concrete implementations of dependencies at run-time. The <code>Standard Kernel</code> is the default implementation of such an object. Let's see it in action:</p>
+
+{% highlight c# %}
+using (IKernel kernel = new StandardKernel())
+{
+    kernel.Bind<ITaxCalculator>()
+          .To<TaxCalculator>()
+          .WithConstructorArgument("rate", .2M);
+
+    var tc = kernel.Get<ITaxCalculator>();
+    Assert.Equal(20M, tc.CalculateTax(100M));
+}
+{% endhighlight %}
+
+<p>As you can see, through a fluent interface we are instructing the kernel how to <em>bind</em> 
+(resolve) requests for a <code>ITaxCalculator</code> to a <code>TaxCalculator</code> class (a concrete implementation), 
+passing to its constructor a given tax rate (20% in this case).</p>
+<p>The example continues showing how a client can retrieve an implementation of the service through the kernel 
+    (via the <code>Get()</code> method) and use it.</p>
+
+<h3>Some Magic</h3>
+<p>You might argue that the little example above is far from impressing. So let's now see Ninject performing something more clever.</p>
+<p>Suppose we have a <code>Sale</code> class modeling a ongoing transaction on a ecommerce site. 
+Such a class in our example depends on a <code>ITaxCalculator</code>to compute the final price of the shopping cart.</p>
+
+{% highlight c# %}
+public class Sale
+{
+    private readonly ITaxCalculator taxCalculator;
+
+    public Sale(ITaxCalculator taxCalculator)
+    {
+        this.taxCalculator = taxCalculator;
+    }
+
+    // more stuff....
+
+    public decimal GetTotal()
+    {
+	     // use the tax calculator to calculate the total
+    }
+}
+{% endhighlight %}
+
+<p>We might create the sale in the obvious way, based on the preceding example:</p>
+
+{% highlight c# %}
+kernel.Bind<ITaxCalculator>()
+          .To<TaxCalculator>()
+          .WithConstructorArgument("rate", .2M);
+var sale = new Sale(kernel.Get<ITaxCalculator>());>
+{% endhighlight %}
+
+<p>More interestingly, it's possible to let Ninject to find out how a <code>Sale</code> should be built 
+based on the binding information it has received:</p>
+
+{% highlight c# %}
+kernel.Bind<ITaxCalculator>()
+          .To<TaxCalculator>()
+          .WithConstructorArgument("rate", .2M);
+var sale = kernel.Get<Sale>();
+{% endhighlight %}
+
+<p>Ninject is smart enough to build a Sale class for us taking care of fulfilling the dependencies behind the scenes. 
+    This an example of <em>autowiring</em>, a most convenient feature of many IoC containers.</p>
+<p><em>Go to <a href="/2011/02/04/ninject-mini-tutorial-part-2//">Part 2</a></em></p>

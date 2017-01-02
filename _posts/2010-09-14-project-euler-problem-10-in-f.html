@@ -1,0 +1,74 @@
+---
+layout: post
+title: Project Euler Problem 10 in F#
+date: 2010-09-14 17:05:01.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- ".NET"
+- F#
+tags:
+- algorithm
+- F#
+- functional
+meta:
+  _edit_last: '1'
+  ks_metadata: a:7:{s:4:"lang";s:2:"en";s:8:"keywords";s:45:"project euler,algorithm,F#,sieve,erathostenes";s:19:"keywords_autoupdate";s:1:"0";s:11:"description";s:44:"A
+    solution to Project Euler Problem 10 in F#";s:22:"description_autoupdate";s:1:"0";s:5:"title";s:30:"Project
+    Euler Problem 10 in F#";s:6:"robots";s:12:"index,follow";}
+  _aioseop_keywords: project euler, algorithm, F#, sieve, erathostenes
+  _aioseop_description: A solution to Project Euler Problem 10 in F#
+  _aioseop_title: Project Euler Problem 10 in F#
+  _wp_old_slug: ''
+  dsq_thread_id: '149554757'
+---
+<p><a href="http://projecteuler.net/index.php?section=problems&id=10">Project Euler Problem 10</a> 
+asks a very simple question, again dealing with prime numbers:</p>
+<blockquote><p>
+Calculate the sum of all the primes below two million.
+</p></blockquote>
+
+<p>I am giving here two solutions, using two different approaches:</p>
+{% highlight F# %}
+open System.Collections.Generic
+
+// SOLUTION 1: TRIAL DIVISION
+let is_prime (x:int64) =
+    let rec check i =
+        double i > sqrt (double x) || (x % i <> 0L && check (i + 1L))
+    check 2L  
+
+let trial_division (n:int64) = 
+    seq { for i in 2L .. n do
+          if is_prime i then yield i }
+    |> Seq.takeWhile (fun x -> x < n)
+    |> Seq.sum
+
+// SOLUTION 2: USE THE SIEVE
+let sieve (n:int64) =
+    let candidatePrimes = new Dictionary<int64, bool>()
+    for i in 2L .. n do candidatePrimes.Add(i, true)
+    for i in 2L .. n/2L do
+        if candidatePrimes.[i] = true then
+            let mutable j = i
+            while (j + i <= n) do
+                j <- j + i
+                candidatePrimes.[j] <- false
+    seq { for i in 2L .. n do
+            if candidatePrimes.[i] = true then
+                yield i }
+    |> Seq.sum
+{% endhighlight %}
+
+<ul>
+<li> The first solution uses <a href="http://en.wikipedia.org/wiki/Trial_division">trial division</a> 
+to create a sequence of all primes under a certain threshold. It's the easiest method to understand.</li>
+<li> The second solution is a naive implementation of the <a href="http://en.wikipedia.org/wiki/Sieve_of_Eratosthenes">Sieve of Erathostenes</a>.
+I first mark all the numbers as candidate primes; then starting from 2 I mark off all the multiples, 
+move to the next candidate prime, until only primes are left (you can refer to the Wikipedia article for all the details).
+<p> As you can see, this second solution has a more imperative feel to it, using mutable data 
+    (a dictionary and a counter). Based on my tests for numbers from 1 to 10 millions, 
+    it's at least twice as fast as the trial division method.</p>
+</li>
+</ul>

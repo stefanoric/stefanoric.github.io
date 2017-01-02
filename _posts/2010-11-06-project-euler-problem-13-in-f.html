@@ -1,0 +1,77 @@
+---
+layout: post
+title: Project Euler Problem 13 in F#
+date: 2010-11-06 22:48:11.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- ".NET"
+- F#
+tags:
+- F#
+- functional
+- Linq
+- Parallel
+meta:
+  _edit_last: '1'
+  _aioseop_keywords: f#,fsharp,euler,algorithm, bigint, parallel, linq
+  _aioseop_description: A solution to Project Euler problem 13 in F#
+  _aioseop_title: Project Euler Problem 13 in F#
+  dsq_thread_id: '168264386'
+  _wp_old_slug: ''
+---
+<p>Now that with F# (and .NET 4.0 in general) we have support for big integers through the <code>BigInteger</code> type, 
+<a href="http://projecteuler.net/index.php?section=problems&amp;id=13">Project Euler problem 13</a> has become a trivial one:</p>
+<blockquote><p>Work out the first ten digits of the sum of the following one-hundred 50-digit numbers.</p>
+<p>
+		37107287533902102798797998220837590246510135740250 <br />
+		46376937677490009712648124896970078050417018260538 <br />
+		74324986199524741059474233309513058123726617309629 <br />
+		... <br />
+		53503534226472524250874054075591789781264330331690</p>
+</blockquote>
+<p>Solution (note that I have removed most of the input numbers to improve readability):</p>
+
+{% highlight F# %}
+
+open System.Linq
+open System.Numerics
+
+let numbers =
+  [|37107287533902102798797998220837590246510135740250I;
+    46376937677490009712648124896970078050417018260538I;
+    74324986199524741059474233309513058123726617309629I;
+    ...
+    53503534226472524250874054075591789781264330331690I|]
+
+
+let solve_problem_13 () =
+    numbers
+        .Aggregate(0I, fun (x:BigInteger) (y:BigInteger) -> x + y)
+            .ToString().Substring(0, 10)
+
+{% endhighlight %}
+
+<p>Using Linq, it's easy to compute the solution with a simple aggregation. Note that I couldn't 
+  use the <code>Sum</code> function directly because it does not have an overload for <code>BigInteger</code> type.</p>
+<p>Without support for such big numbers, one could have reasoned that, in order to calculate the first 10 digits 
+  of the result, only the first <b>11</b> digits of each number are relevant. With this intuition, the problem 
+  would have been tractable using simple <code>long</code>s.</p>
+<h2>Parallel version</h2>
+<p>Problem 13 is a classical problem that can be resolved using 
+  <a href="http://msdn.microsoft.com/en-us/library/ff963547.aspx">parallel aggregation</a>: it can be decomposed into many 
+  independent sub-tasks (each calculating the sum of 10 numbers, as an example) and the final 
+  result can be obtained aggregating the results from each of them.</p>
+<p>With Linq <code>AsParallel</code>, scaling this problem on multiple cores is trivial:</p>
+
+{% highlight F# %}
+let solve_problem_13 () =
+    numbers
+        .AsParallel() // MAKE IT PARALLEL!
+            .Aggregate(0I, fun (x:BigInteger) (y:BigInteger) -> x + y)
+                .ToString().Substring(0, 10)
+{% endhighlight %}
+
+<p>Of course, with such a trivial problem, you should not expect big performance improvements with a parallel version (indeed, the overhead of 
+  splitting the work into different threads might usually <em>lengthen</em> the time it takes to get to the result).</p>

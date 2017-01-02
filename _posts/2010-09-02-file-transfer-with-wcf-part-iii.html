@@ -1,0 +1,126 @@
+---
+layout: post
+title: 'File Transfer with WCF: Part III'
+date: 2010-09-02 14:08:55.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- ".NET"
+- C#
+- WCF
+tags:
+- C#
+- SOA
+- WCF
+meta:
+  _edit_last: '1'
+  ks_metadata: 'a:7:{s:4:"lang";s:2:"en";s:8:"keywords";s:31:"WCF,stream,file,upload,download";s:19:"keywords_autoupdate";s:1:"0";s:11:"description";s:81:"The
+    third episode on a series on transferring large files on WCF using streaming.";s:22:"description_autoupdate";s:1:"0";s:5:"title";s:32:"File
+    Transfer with WCF: Part III";s:6:"robots";s:12:"index,follow";}'
+  _wp_old_slug: ''
+  _aioseop_title: 'File Transfer with WCF: Part III'
+  _aioseop_description: The third episode on a series on transferring large files
+    on WCF using streaming.
+  _aioseop_keywords: WCF, stream, file, upload, download
+  dsq_thread_id: '149554734'
+---
+<p><em>This is the third post on a small series about transferring large files with WCF using streaming</em> :</p>
+<ul>
+<li><a href="/2009/08/28/file-transfer-with-wcp/">File Transfer With WCF</a></li>
+<li><a href="/2009/10/02/file-transfer-with-wcf-part-ii/">File Transfer With WCF: Part II</a></li>
+<li><a href="/2010/09/02/file-transfer-with-wcf-part-iii/">File Transfer With WCF: Part III</a></li>
+</ul>
+<p>I am closing this series of posts by sharing a skeleton for the client side handling of the uploaded and 
+    downloaded files. Please note that the following are excerpt from a larger context and so will not compile in 
+    your environment <em>as is</em>: they are only intended to give a rough idea of how the files can be handled.</p>
+<h3>Download</h3>
+{% highlight C# %}
+private void IssueDownloadRequest(string localFile, string serviceUrl, FileDownloadMessage request)
+{
+    this.service = this.proxy.OpenProxy(serviceUrl);
+
+    try
+    {
+        using (FileDownloadReturnMessage response = this.service.DownloadFile(request))
+        {
+            if (response != null && response.FileByteStream != null)
+            {
+                SaveFile(response.FileByteStream, localFile);
+            }
+        }
+
+        this.proxy.CloseProxy(this.service);
+    }
+    catch (Exception e)
+    {
+        throw new FileTransferProxyException("Error while downloading the file", e);
+    }
+    finally
+    {
+        // we expect the stream returned from the server to be closed by the
+        // server itself so nothing to be done with it here. Just abort
+        // the proxy if needed.
+        this.proxy.AbortProxyIfNeeded(this.service);
+    }
+}
+
+private static void SaveFile(Stream saveFile, string localFilePath)
+{
+    const int bufferSize = 65536; // 64K
+
+    using (FileStream outfile = new FileStream(localFilePath, FileMode.Create))
+    {
+        byte[] buffer = new byte[bufferSize];
+        int bytesRead = saveFile.Read(buffer, 0, bufferSize);
+
+        while (bytesRead > 0)
+        {
+            outfile.Write(buffer, 0, bytesRead);
+            bytesRead = saveFile.Read(buffer, 0, bufferSize);
+        }
+    }
+}
+{% endhighlight %}
+
+<h3>Upload</h3>
+
+{% highlight C# %}
+public void UploadFile(string localFileName, string serviceUrl, FileTypeEnum fileType)
+{
+    this.service = this.proxy.OpenProxy(serviceUrl);
+    try
+    {
+        using (Stream fileStream = new FileStream(localFileName, FileMode.Open, FileAccess.Read))
+        {
+            var request = new FileUploadMessage();
+            string remoteFileName = null;
+            if (fileType == FileTypeEnum.Generic)
+            {
+                // we are using the service as a "FTP on WCF"
+                // give the remote file the same name as the local one
+                remoteFileName = Path.GetFileName(localFileName);
+            }
+
+            var fileMetadata = new FileMetaData(localFileName, remoteFileName, fileType);
+            request.MetaData = fileMetadata;
+            request.FileByteStream = fileStream;
+
+            this.service.UploadFile(request);
+            this.proxy.CloseProxy(this.service);
+        }
+    }
+    catch (IOException)
+    {
+        throw new FileTransferProxyException("Unable to open the file to upload");
+    }
+    catch (Exception e)
+    {
+        throw new FileTransferProxyException(e.Message);
+    }
+    finally
+    {
+        this.proxy.AbortProxyIfNeeded(this.service);
+    }
+ }
+{% endhighlight %}

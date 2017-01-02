@@ -1,0 +1,98 @@
+---
+layout: post
+title: Dependency Injection for Dummies
+date: 2011-11-08 10:10:31.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- ".NET"
+- C#
+- Design and Patterns
+tags:
+- agile
+- C#
+- Design and Patterns
+- IoC
+meta:
+  _edit_last: '1'
+  dsq_thread_id: '465214998'
+  wpsd_autopost: '1'
+---
+<p><em><a href="http://codecriticon.com/">Antonio Vidal</a> has translated this post into Spanish: you can find it 
+<a href="http://codecriticon.com/dependencia-inyeccion-dummies/">here</a>.</em></p>
+<p>Dependency injection is a very simple concept: if you have an object that interacts with other 
+  objects the responsibility of finding a reference to those objects at run time is moved outside of the object itself.</p>
+<p>What does it mean for an object to &quot;interact&quot; with other objects? Generally it means 
+  invoking methods or reading properties from those objects. So if we have a class <code>A</code> that invokes method <code>Calculate</code> on class <code>B</code>, we can say that <code>A</code> interacts with <code>B</code>.</p>
+<p>In the following example we show class <code>A</code> interacting with class <code>B</code>. 
+We can equally say that <class>A</class> <i>depends</i> on class <code>B</code> to fulfill a responsibility. 
+In this case, it not only invokes its method <code>Calculate</code> but it also creates a new instance of that class.</p>
+
+{% highlight csharp %}
+class A
+{
+  private B _b;
+
+  public A
+  {
+    _b = new B();
+  }
+   
+  public int SomeMethod()
+  {
+    return (_b.Calculate() * 2);
+  }
+}
+{% endhighlight %} 
+
+<p>In the following example, on the other side, the responsibility of getting a reference to an implementation of 
+  a class of type <code>B</code> is moved <i>outside</i> of <code>A</code>:</p>
+
+{% highlight csharp %}
+class A
+{
+  private B _b;
+  public A(B b) 
+  {
+    _b = b; 
+  }
+  public int SomeMethod()
+  {
+    return _(b.Calculate * 2);
+  } 
+}
+{% endhighlight %}
+
+<p>In this case we say that a dependency (<code>B</code>) has been <i>injected</i> into <code>A</code>, via the constructor. 
+Of course, you can also inject dependencies via a property (or even a regular method), like in the following example:</p>
+
+{% highlight csharp %}
+class A
+{
+  private B _b;
+
+  public B B 
+  { 
+     get { return _b; }
+     set { _b = value; }
+  }
+
+  public int SomeMethod()
+  {
+    if (_b != null)
+        return _b.RetrieveValue() * 2;}
+    else 
+        // HANDLE THIS ERROR CASE
+        return -1;
+  } 
+}
+{% endhighlight %}
+
+<p>So this is all there is about dependency injection. Everything else just builds on this core concept.</p>
+<p>Like for example Inversion Of Control (IoC) tools which helps you wiring together your objects at run time, injecting all dependencies as needed. So what exactly is Inversion of Control and how does it relate to Dependency Injection (DI)?</p>
+<p>I like to associate IoC to the <a href="http://en.wikipedia.org/wiki/Hollywood_Principle">Hollywood Principle</a>: &quot;<em>Don&#39;t call us, we&#39;ll call you</em>&quot;. IoC is a design principle where <quote>reusable generic code controls the execution of problem-specific code</quote>: it is a characteristic of many frameworks, where the application is built extending or customizing a common skeleton; you put your own classes at specific points and the framework will call you when needed.</p>
+<p>You can use an IoC container as a framework to perform Dependency Injection on your behalf: you tell the container which are the concrete implementation classes for your dependencies and the container will make sure that your constructors or setters will be called with the right objects.</p>
+<p>Therefore, IoC containers are just a <i>convenience</i> to simplify how dependency injection is handled. But even if you don&#39;t use one you could still manually perform dependency injection.</p>
+<p>(If you want to have a look at how an IoC container works you can jump to my <a href="/2011/01/21/ninject-mini-tutorial-part-1/">mini tutorial on Ninject</a>).</p>
+<p>Why is the concept of dependency injection important? Because by applying it, you simplify your design (separating the responsibility of using an object from the responsibility of retrieving that object) and your code becomes much easier to test, since you can mock out the dependencies substituting them with fake (stub) objects. But that is the subject for another post.</p>

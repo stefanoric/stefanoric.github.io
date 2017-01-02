@@ -1,0 +1,68 @@
+---
+layout: post
+title: See Your XML Docs As You Type With CR Documentor
+date: 2010-01-22 20:39:29.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Tools
+tags:
+- C#
+- Documentor
+- Ghost-Doc
+- Plugin
+- Tools
+- Visual Studio 2008
+meta:
+  _edit_last: '7468053'
+  _wpas_mess: 'Blogged: See Your XML Docs As You Type With CR Documentor: http://wp.me/puaLG-bj'
+  _wpas_done_twitter: '1'
+  dsq_thread_id: '150651201'
+---
+<h3>Introduction</h3>
+<p>Almost 10 years ago now I used to be a Java developer in Motorola. After a long hiatus in the 
+  embedded systems and a job change, I have come back to enterprise development, this time in .Net.</p>
+<p>I remembered that in the good ol’ days it required 2 steps to see the final rendering of the 
+  XML documentation: firing javadoc (usually from within an ANT task) and the open up the content in a browser.</p>
+<p>I was quite surprised to see that in the .Net area seeing the final output of the docs was not as 
+  straightforward as I hoped for. Yes, there was <a href="http://ndoc.sourceforge.net/">NDoc</a> 
+  to parse the XML, but its development stopped around 2005 and it’s doesn’t support anything 
+  beyond C# 2.0. There’s also <a href="http://www.codeplex.com/Sandcastle">Sandcastle</a>, 
+  but to make it work for me it has required a few downloads and a bit of tweaking here and there. 
+  And integrating it into my NAnt task had not been that easy either. 
+  But somehow in the end I have pulled that out.</p>
+<p>Therefore I have been pleasantly surprised when I met <strong>CR Documentor, </strong>a little 
+plug-in for visual studio that let’s you see your XML documentation <em>as you write it</em>. It’s almost 
+like having a WYSIWYG editor, without having to launch Sandcastle, wait for the complete build, and open up the browser.</p>
+<h3>Installation</h3>
+<ul>
+<li><a href="http://code.google.com/p/cr-documentor/"><img style="display:inline;border-width:0;margin:0;" title="cr_documentor-logo" src="{{ site.baseurl }}/assets/cr_documentorlogo.gif" border="0" alt="cr_documentor-logo" width="100" height="102" align="right" /></a>Requirements:
+<ul>
+<li>Visual Studio 2005 or greater (I am pretty confident that you need at least a Professional version as opposed to Express). I am running it on Visual Studio Team System 2008, not sure whether it works also on 2010.</li>
+<li>The DXCore plugin framework from DevExpress. Possibly the best (and only?) way to get it is to get through the excellent free <a href="http://www.devexpress.com/Products/Visual_Studio_Add-in/CodeRushX/">CodeRush Xpress for C# and VB</a></li>
+</ul>
+</li>
+<li>Download the plugin: CR Documentor is hosted at Google Code at <a href="http://code.google.com/p/cr-documentor/">this link</a>.</li>
+<li>Copy the dll in your DX-Core plugin-folder (<tt>C:\Users\<username>\Documents\DevExpress\IDE Tools\Community\PlugIns</tt>)</li>
+<li>Restart Visual Studio</li>
+</ul>
+<h3>Usage</h3>
+<ol>
+<li>CR Documentor adds itself in the right click menu, close to the bottom. From the submenu, choose “Show CR_Documentor window”.<a href="http://69.175.59.226/~stefano3/blog/wp-content/uploads/2010/01/cr_documentor1.png"><img style="display:inline;margin-left:0;margin-right:0;border-width:0;" title="CR_documentor-1" src="{{ site.baseurl }}/assets/cr_documentor1_thumb.png" border="0" alt="CR_documentor-1" width="244" height="212" /></a></li>
+<li>A new window opens up in floating mode (I prefer to dock-it to the right side together with my solution explorer and luckily the plug-in remembers this choice every time I open the window after closing it and at startup).<a href="http://69.175.59.226/~stefano3/blog/wp-content/uploads/2010/01/image.png"><img style="display:inline;border-width:0;" title="image" src="{{ site.baseurl }}/assets/image_thumb.png" border="0" alt="image" width="244" height="127" /></a></li>
+<li>Now every time your cursor is on an XML doc, you can see the preview in the Documentor window. See for example when I put the cursor on the XML doc of a class: I get a complete picture of the documentation for that class and its methods all in real time.<br />
+<a href="http://stefanoricciardi.files.wordpress.com/2010/01/image1.png"><img style="display:inline;border-width:0;" title="image" src="{{ site.baseurl }}/assets/image_thumb1.png" border="0" alt="image" width="229" height="244" /></a></li>
+<li>There are a few other features that I don’t use very often. All of them are accessible by the right-click content sensitive menu:
+<ul>
+<li>Expand/Collapse all XML comments in the editor</li>
+<li>Insert XML docs templates (<a href="/2009/06/19/must-have-vs-2008-free-plug-ins-2-ghost-doc/">I prefer to use GhostDoc for that</a>).</li>
+<li></li>
+</ul>
+</li>
+</ol>
+<h3>Configuration</h3>
+<p>Like all DXCore plugins, you can access to the configuration by pressing ALT+CTRL+SHIFT+O combination. 
+  I like to check all my options to Sandcastle because that’s the tool that I will be using to 
+  create the final XML documentation.</p>
+ 

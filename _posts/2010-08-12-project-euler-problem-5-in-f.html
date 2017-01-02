@@ -1,0 +1,84 @@
+---
+layout: post
+title: Project Euler Problem 5 in F#
+date: 2010-08-12 22:35:53.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- ".NET"
+- F#
+tags:
+- algorithm
+- F#
+meta:
+  _edit_last: '1'
+  ks_metadata: a:7:{s:4:"lang";s:2:"en";s:8:"keywords";s:45:"numbers,int64,lcm,let,list,common,gcd,divisor";s:19:"keywords_autoupdate";s:1:"1";s:11:"description";s:157:"numbers
+    from 1 to 10 without any remainder. What is the smallest positive number that
+    is evenly divisible by all of the numbers from 1 to 20? I'll first show";s:22:"description_autoupdate";s:1:"1";s:5:"title";s:0:"";s:6:"robots";s:12:"index,follow";}
+  _wp_old_slug: ''
+  dsq_thread_id: '149883057'
+---
+<p>Yet another episode in <a href="http://stefanoricciardi.com/tag/euler-problems/">my attempts to solve Project Euler problems</a>.</p>
+<p>Enter problem number 5:</p>
+<blockquote><p>2520 is the smallest number that can be divided by each of the numbers from 1 to 10 without any remainder.</p>
+<p>What is the smallest positive number that is evenly divisible by all of the numbers from 1 to 20?
+</p></blockquote>
+<p>I'll first show you my solution and then explain the bits:</p>
+
+{% highlight F# %}
+// greatest common divisor (Euclid Algorithm)
+let rec gcd (a:int64, b:int64) =
+    match b with
+       | x when x = 0L -> a
+       | _ -> gcd (b, a % b)
+
+// least common divisor
+let rec lcm (a:int64, b:int64) =
+    (a * b) / gcd (a,b)
+
+// least common divisor for a list of numbers
+let rec lcmlist (list: int64 list) =
+    match list with
+        | [] -> 1L
+        | [a] ->  a
+        | [a;b] ->  lcm(a,b)
+        | h::t  ->  lcm(h, lcmlist t)
+
+// utility to generate a list of all integers
+// up to a certain number
+let generateListTo top =
+    let l = [for i in 1L .. int64 top ->  i]
+    l
+
+let resolveProblem5 =
+    generateListTo 20 |>  lcmlist
+{% endhighlight %}
+
+<p>The first thing to realize when reading this problem is that what is really being asked is<br />
+the <a href="http://en.wikipedia.org/wiki/Least_common_multiple">least common multiple</a> (<em>lcm</em> from now on) 
+of a list of numbers (in particular, the numbers from 1 to 20 included).</p>
+<p>There's a straightforward way to compute the \(lcm\)</em>, by using the 
+<a href="http://en.wikipedia.org/wiki/Greatest_common_divisor">greatest common divisor</a> (<em>gcd</em>), as follows:</p>
+$$
+lcm(a,b) = \frac{|a \cdot b|}{gcd(a,b)}
+$$
+<p>As for the <em>gcd</em> itself, it can be easily implemented using the 
+<a href="http://en.wikipedia.org/wiki/Euclidean_algorithm">Euclid Algorithm</a>.</p>
+<p>The last piece of the puzzle comes when you realize how calculating the <em>lcd</em> of 
+a set of numbers can be reduced to calculating <em>lcd</em>s pair-wise in the following fashion:</p>
+$$
+lcm(a,b,c,d) = lcm(a, lcm(b,c,d) = lcm(a, lcm(b, lcm(c,d)))
+$$
+
+<p>For example, given the numbers 3, 4, 14, and 18, their <em>lcm </em>would be computed in the following way:</p>
+
+$$\begin{align*}
+lcm (3,4,14, 18) &= lcm(3, lcm(4,14,18)) \\
+                 &= lcm(3, lcm(4, lcm(14, 18))) \\
+                 &= lcm(3, lcm(4, 126)) \\
+                 &= lcm(3, 252) \\
+                 &= 252
+\end{align*}$$
+
+<p>As you can see, the algorithm lends itself beautifully to recursion and such is the solution that I have provided. </p>

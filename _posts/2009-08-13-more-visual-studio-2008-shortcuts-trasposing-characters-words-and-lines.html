@@ -1,0 +1,88 @@
+---
+layout: post
+title: 'More Visual Studio 2008 Shortcuts: Trasposing Characters, Words and Lines'
+date: 2009-08-13 18:30:25.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Tools
+tags:
+- refactoring
+- Tools
+- Visual Studio 2008
+meta:
+  _edit_last: '1'
+  dsq_thread_id: '149554567'
+---
+<p>I love <a href="/2009/06/10/most-useful-visual-studio-2008-keyboard-shortcuts/">shortcuts</a>. 
+I really do. So with some excitement I have found a few in the Visual Studio Editor 
+that may come handy once in a while. These are the shortcuts to transpose characters, words and lines:</p>
+<table border="0" cellspacing="0" cellpadding="2" width="580">
+<tbody>
+<tr>
+<td width="150" valign="top">CTRL + T</td>
+<td width="430" valign="top"><strong>Transpose characters</strong></td>
+</tr>
+<tr>
+<td width="150" valign="top">CTRL + SHIFT + T</td>
+<td width="430" valign="top"><strong>Transpose words</strong></td>
+</tr>
+<tr>
+<td width="150" valign="top">ALT + SHIFT + T</td>
+<td width="430" valign="top"><strong>Transpose lines</strong></td>
+</tr>
+</tbody>
+</table>
+<h3>Transposing Characters (CTRL+T)</h3>
+<p>This is mostly useful if you mispelled a word. Since most code typing is 
+  done with Intellisense, I have found this useful for comments mostly.</p>
+<h3>Transposing Words (CTRL + SHIFT + T)</h3>
+<p>Beside the occasional typo writing comments, this is handy when after refactoring 
+  a function signature I have changed the order of the parameters.<br />
+Suppose you have for example you call a function in the following way:</p>
+<p><code>calculateVat(price, percentage)</code></p>
+<p>if for whatever reason <code>calculateVat</code> signature has changed so that the 
+percentage comes first, you just need to put the cursor on <code>price</code> or between 
+the two words and pressing CTRL + SHIFT + T you'll have the following:</p>
+<p><code>calculateVat(percentage, price)</code></p>
+<h3>Transposing lines (ALT + SHIFT + T)</h3>
+<p>I use the following formatting to wrap long function signauters across more lines:</p>
+
+{% highlight C# %}
+public void AddEmployee(
+    string name,
+    string surname,
+    string address,
+    string homePhone,
+    string mobilePhone,
+    string email)
+{
+   // implementation here
+}
+{% endhighlight %}
+
+<p>Suppose that I decide that I want to reorder the parameters such that the 
+  mobilePhone comes before than homePhone, for whichever reason. I just need to 
+  place the cursor somewhere on the line of "homePhone" and the two lines will swap. To remember which 
+  is the direction of swapping, my mnemonic is that the line where the cursor is will <em>fall</em>.</p>
+  
+{% highlight C# %}
+public void AddEmployee(
+    string name,
+    string surname,
+    string address,
+    string mobilePhone, // this line has moved up
+    string homePhone,  // this line has moved down
+    string email)
+{
+   // implementation here
+}
+{% endhighlight %}
+
+<p>This is especially useful if you have more overloads of the same function where 
+  you need to update the order of the parameters in each of them. It's certainly 
+  quicker than a copy&paste tecnhique.</p>
+<p>If you need to move one line of more than one position down, 
+  just keep pressing the ALT + SHIFT + T combination and the line will keep falling down (the cursor automatically 
+  stays in the line that is moving).</p>

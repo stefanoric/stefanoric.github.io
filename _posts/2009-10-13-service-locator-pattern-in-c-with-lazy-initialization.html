@@ -1,0 +1,120 @@
+---
+layout: post
+title: Service Locator Pattern in C# with Lazy Initialization
+date: 2009-10-13 14:37:35.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Design and Patterns
+tags:
+- C#
+- design
+- Design and Patterns
+- OOP
+meta:
+  _edit_last: '1'
+  _wpas_skip_twitter: '1'
+  ks_metadata: 'a:7:{s:4:"lang";s:2:"en";s:8:"keywords";s:79:"service,typeof,type,lazy,initialization,implementation,constructor,servicestype";s:19:"keywords_autoupdate";s:1:"1";s:11:"description";s:158:"Service
+    Locator Pattern in C#: A Simple Example I introduced a fairly basic implementation
+    of this pattern. In this post I will address one of the limitations";s:22:"description_autoupdate";s:1:"1";s:5:"title";s:0:"";s:6:"robots";s:12:"index,follow";}'
+  dsq_thread_id: '149554718'
+---
+<p>In my previous post <a href="/2009/09/25/service-locator-pattern-in-csharpa-simple-example/">Service Locator 
+Pattern in C#: A Simple Example</a> 
+I introduced a fairly basic implementation of this pattern. In this post 
+I will address one of the limitations of that implementation, introducing a form of <strong>lazy initialization</strong>.</p>
+<h3>Defining Lazy Initialization</h3>
+<p>Lazy initialization improves the performance of object creation, deferring 
+    long running initializations until they are really needed.</p>
+<p>Suppose for example that some of the fields of an object need to be read from the database. 
+    If a client never access those fields, accessing the database to retrieve those fields has 
+    been useless and it has just made object initialization slower (often by a considerable factor).</p>
+<p>Martin Fowler credits Kent Beck with the introduction of the lazy initialization pattern, 
+    and in <a href="http://www.amazon.co.uk/Enterprise-Application-Architecture-Addison-Wesley-signature/dp/0321127420">PoEAA</a> 
+    book he describes it in the following way:</p>
+<blockquote><p>The basic idea is that every access to the field checks to see if 
+    it's null. If so, it calculates the value of the field before returning the field. 
+    To make this work you have to ensure that the field is self-encapsulated, meaning 
+    that all access to the field, even from within the class, is done through a getting method.</p></blockquote>
+<p>Fairly simple.</p>
+<h3>The Improved Service Locator</h3>
+<p>The following is the improved version of the service locator which uses lazy initialization of the services.</p>
+
+{% highlight C# %}
+internal class ServiceLocator : IServiceLocator
+{
+    // a map between contracts -> concrete implementation classes
+    private IDictionary<Type, Type> servicesType;
+
+    // a map containing references to concrete implementation already instantiated
+    // (the service locator uses lazy instantiation).
+    private IDictionary<Type, object> instantiatedServices;
+
+    internal ServiceLocator()
+    {
+        this.servicesType = new Dictionary<Type, Type>();
+        this.instantiatedServices = new Dictionary<Type, object>();
+
+        this.BuildServiceTypesMap();
+    }
+
+    public T GetService<T>()
+    {
+        if (this.instantiatedServices.ContainsKey(typeof(T)))
+        {
+            return (T)this.instantiatedServices[typeof(T)];
+        }
+        else
+        {
+            // lazy initialization
+            try
+            {
+                // use reflection to invoke the service
+                ConstructorInfo constructor = servicesType[typeof(T)].GetConstructor(new Type[0]);
+                Debug.Assert(constructor != null, "Cannot find a suitable constructor for " + typeof(T));
+
+                T service = (T)constructor.Invoke(null);
+
+                // add the service to the ones that we have already instantiated
+                instantiatedServices.Add(typeof(T), service);
+
+                return service;
+            }
+            catch (KeyNotFoundException)
+            {
+                throw new ApplicationException"The requested service is not registered");
+            }
+        }
+    }
+
+    private void BuildServiceTypesMap()
+    {
+        servicesType.Add(typeof(IServiceA),
+            typeof(ServiceA));
+
+        servicesType.Add(typeof(IServiceB),
+            typeof(ServiceB));
+
+        servicesType.Add(typeof(IServiceC),
+            typeof(ServiceC));
+     }
+}
+{% endhighlight %}
+
+<p>We are now maintaining two separate maps:</p>
+<ul>
+<li><code>servicesType</code> maps an interface describing a service to a <em>type</em> T that implements that interface.</li>
+<li><code>instantiatedServices</code> maps an interface to an <em>instantiated</em> object of class T.</li>
+</ul>
+<p>Both maps are initialized in the constructor. However only the first map is filled. 
+    Every time <code>GetService</code> is invoked, we check whether a concrete 
+    implementation of that service has already been created. If not, we create that service 
+    implementation retrieving its constructor via reflection, and we put a reference to that 
+    implementation in the <code>instantiatedServices</code> map.</p>
+<p>For this to work, the service implementation needs to expose a default (parameterless) constructor.</p>
+
+<p>If services creation time is significant, lazy initialization 
+    can save you quite some time during application start up, with very little cost 
+    in terms of increased complexity.</p>
+<p><i>Next article in the series: <a href="/2009/10/29/a-singleton-service-locator-pattern/">A Singleton Service Locator</a></i></p>

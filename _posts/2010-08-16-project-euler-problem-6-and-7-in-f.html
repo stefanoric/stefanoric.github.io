@@ -1,0 +1,96 @@
+---
+layout: post
+title: Project Euler Problem 6 and 7 in F#
+date: 2010-08-16 09:03:10.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- ".NET"
+- F#
+tags:
+- algorithm
+- F#
+- functional
+meta:
+  _edit_last: '1'
+  ks_metadata: a:7:{s:4:"lang";s:2:"en";s:8:"keywords";s:40:"f#,fsharp,algorithm,euler,prime,sequence";s:19:"keywords_autoupdate";s:1:"0";s:11:"description";s:51:"A
+    solution to Euler Project Problems 6 and 7 in F#.";s:22:"description_autoupdate";s:1:"0";s:5:"title";s:35:"Project
+    Euler Problem 6 and 7 in F#";s:6:"robots";s:12:"index,follow";}
+  _aioseop_title: Project Euler Problem 6 and 7 in F#
+  _aioseop_description: A solution to Euler Project Problems 6 and 7 in F#.
+  _aioseop_keywords: f#, fsharp, algorithm, euler, prime, sequence
+  _wp_old_slug: ''
+  dsq_thread_id: '149554700'
+---
+<p>Project Euler problem 6 is one of the easiest that I have encountered so far. 
+  Also, Problem 7 is quite easy to solve once you have a function for prime numbers 
+  (something we did in <a href="/2010/07/01/project-euler-problem-3-in-f/">Problem 3</a>). 
+  Therefore, in this post I give 2 problems for the price of 1! :)</p>
+<h2>Problem 6</h2>
+<p>Let's have a look at the question for Problem 6:</p>
+<blockquote><p>
+The sum of the squares of the first ten natural numbers is,</p>
+<p>1^2 + 2^2 + ... + 10^2 = 385<br />
+The square of the sum of the first ten natural numbers is,</p>
+<p>(1 + 2 + ... + 10)^2 = 55^2 = 3025</p>
+<p>Hence the difference between the sum of the squares of the first ten natural numbers and the square of the sum is 3025 - 385 = 2640.</p>
+<p>Find the difference between the sum of the squares of the first one hundred natural numbers and the square of the sum.
+</p></blockquote>
+<p>There are a few known tricks to calculate the sum of the squares;
+however, given the limited size of the problem at hand, brute-force is perfectly fine: 
+it shows once more the elegance of a declarative solution.</p>
+
+{% highlight F# %}
+open System
+
+let square x = x * x
+
+// a^2 + b^2  + ... + z^2 
+let sum_of_square max =
+    Seq.unfold (fun x -> if x > max then None else Some(x*x, x+1)) 1
+    |> Seq.sum
+
+// (a +b + ... + z)^2 
+let square_of_sum max =
+    {1 .. max}
+    |> Seq.sum
+    |> square
+
+let problem_6 max =
+    square_of_sum(max) - sum_of_square(max)
+{% endhighlight %}
+
+<h2>Problem 7</h2>
+<blockquote><p>
+By listing the first six prime numbers: 2, 3, 5, 7, 11, and 13, we can see that the 6th prime is 13.</p>
+<p>What is the 10001st prime number?
+</p></blockquote>
+<p>As I mentioned in the introduction, this one is fairly easy once you know how to tell 
+  whether a given number is prime or not. We did that exercise in 
+  <a href="/2010/07/01/project-euler-problem-3-in-f/">Problem 3</a>.</p>
+<p>There's a catch though: this time we are <i>counting</i> the prime numbers. 
+In the test we did in <a href="/2010/07/01/project-euler-problem-3-in-f/">Problem 3</a> 
+there was a small error that in that context was irrelevant: the test returned <code>true</code> 
+also for 0 and 1, which strictly speaking are not prime numbers (2 is considered to be the first prime number).</p>
+<p>For this reason, I have modified the code of <code>is_prime</code> 
+a bit so that the first prime will be 2, the second 3, and so on as appropriate.</p>
+
+{% highlight F# %}
+open System
+
+let is_prime x =
+    let rec check i =
+        x > 1L && 
+       (double i > sqrt (double x) || (x % i <> 0L && check (i + 1L)))
+    check 2L                 
+
+let sequence_of_first_n_primes n =
+    Seq.initInfinite (fun x -> int64 x)
+    |> Seq.filter is_prime
+    |> Seq.take n
+    |> Seq.max
+{% endhighlight %}
+
+<p>Ok... break time is over. <a href="http://projecteuler.net/index.php?section=problems&id=8">Problem 8</a> looks a bit more challenging. 
+See you when I have got a nice solution for that.</p>

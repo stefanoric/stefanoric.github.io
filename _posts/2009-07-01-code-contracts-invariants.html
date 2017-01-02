@@ -1,0 +1,90 @@
+---
+layout: post
+title: 'Code Contracts: Invariants'
+date: 2009-07-01 23:17:19.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- ".NET"
+tags:
+- design
+- OOP
+meta:
+  _edit_last: '1'
+  ks_metadata: a:7:{s:4:"lang";s:2:"en";s:8:"keywords";s:53:"invariants,day,public,month,class,contract,short,year";s:19:"keywords_autoupdate";s:1:"1";s:11:"description";s:159:"invariants.
+    Invariants define all those conditions (or predicates, if you will) that are guaranteed
+    to be true for all objects of a particular class throughout";s:22:"description_autoupdate";s:1:"1";s:5:"title";s:0:"";s:6:"robots";s:12:"index,follow";}
+  dsq_thread_id: '150393216'
+---
+<p>In a <a href="/2009/06/26/introduction-to-microsoft-code-contracts-with-visual-studio-2008/">previous post</a> 
+we introduced Microsoft Code Contracts, and got an idea of what Design by Contract (DBC) is all about. 
+It's now time to introduce another  powerful concept that complements and 
+completes <em>preconditions </em>and <em>postconditions </em>when you specify the behavior of your object: class <em>invariants</em>.</p>
+<p><em>Invariants </em>define all those conditions (or <em>predicates</em>, if you will) 
+that are guaranteed to be true for all objects of a particular class throughout its life-cycle: 
+these invariants need first to be met during construction and continue to hold 
+before and after methods invocations.</p>
+<p>Let's consider a very simple implementation of a class that represents a calendar date, 
+  specified by day, month and year:</p>
+
+{% highlight C# %}
+public class Date
+{
+  public short Day { get; }
+  public short Month { get; }
+  public short Year { get; }
+
+  public Date(short dd, short mm, short yy)
+  {
+    Day = dd;
+    Month = mm;
+    Year = yy;
+  }
+
+  public void Increment()
+  {
+    // some tricky code to increment the day,
+    // month (if needed) and year (if needed)
+  }
+}
+{% endhighlight %}
+
+<p>Oversimplifying, such an object has some obvious invariants, or conditions that must always be met:</p>
+<ul>
+<li><code>Day</code>, <code>Month</code>, and <code>Year</code> may not be negative</li>
+<li><code>Day</code> must be a number between 1 and 31 (let's simplify and assume all months have the same days)</li>
+<li><code>Month</code> must be a number between 1 and 12</li>
+</ul>
+<p>These conditions must be true upon successful creation of a <code>Date</code> 
+object <em>and</em> after each invocation of <code>Increment()</code>.</p>
+<p>With Code Contracts, one expresses invariants using a special method tagged 
+  with a <code>[ContractInvariantMethod]</code> attribute; it is usually named <code>ObjectInvariant</code> 
+  although this is just a convention: you can name it anything you like.</p>
+  
+{% highlight C# %}
+public class Date
+{
+  // ...
+  // rest of the class as listing above
+
+  [ContractInvariantMethod]
+  protected void ObjectInvariant()
+  {
+    Contract.Invariant(this.Day >= 0);
+    Contract.Invariant(this.Day <= 31);
+    Contract.Invariant(this.Month >= 0);
+    Contract.Invariant(this.Month <= 12);
+    Contract.Invariant(this.Year >= 0);
+  }
+}
+{% endhighlight %}
+
+<p>You are not allowed to put any other code but the invariants; the method must have 
+  a <code>void</code> return type and be protected (unless the class is sealed of course).</p>
+<p>Invariants are checked at the end of every public method (including constructors and 
+  excluding finalizers and methods implementing <code>IDisposable.Dispose()</code>) - in 
+  our example, every time a client of this class invokes the <code>Increment()</code> method, 
+  the invariants will be checked.</p>
+<p>Invariants, along with pre and postconditions, are inherited by subclasses. We'll see 
+  how this fits in a sound object oriented design in the next post.</p>

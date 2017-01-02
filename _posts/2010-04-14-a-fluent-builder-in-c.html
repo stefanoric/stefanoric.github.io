@@ -1,0 +1,217 @@
+---
+layout: post
+title: A Fluent Builder in C#
+date: 2010-04-14 22:27:40.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- ".NET"
+- C#
+tags:
+- C#
+- Design and Patterns
+meta:
+  _edit_last: '1'
+  ks_metadata: a:7:{s:4:"lang";s:2:"en";s:8:"keywords";s:45:"design pattern, fluent
+    interface, c#, builder";s:19:"keywords_autoupdate";s:1:"0";s:11:"description";s:151:"string
+    Name { get; set; } string NickName { get; set; } Color ShirtColor { get; set;
+    } string HomeTown { get; set; } string Ground { get; set; } public";s:22:"description_autoupdate";s:1:"1";s:5:"title";s:0:"";s:6:"robots";s:12:"index,follow";}
+  dsq_thread_id: '149554680'
+---
+<p>When it comes to the number of arguments to pass to a function, 
+    <a href="http://www.objectmentor.com/omTeam/martin_r.html">Uncle Bob</a> is pretty clear. 
+    Quoting from <a href="http://www.amazon.co.uk/gp/product/0132350882?ie=UTF8&amp;tag=stefaricci-21&amp;linkCode=as2&amp;camp=1634&amp;creative=19450&amp;creativeASIN=0132350882">Clean Code</a><img style="margin: 0px; border-style: none !important;" src="{{ site.baseurl }}/assets/ir?t=stefaricci-21&amp;l=as2&amp;o=2&amp;a=0132350882" border="0" alt="" width="1" height="1" />:</p>
+<blockquote><p>The ideal number of arguments for a function is zero (niladic). Next comes one (monadic), 
+    followed closely by two (dyadic). Three arguments (triadic) should be avoided when possible. 
+    More than three (polyadic) requires very special justification – and then shouldn’t be used anyway.</p></blockquote>
+<p>Still, some objects might have more than 3 attributes or properties and 
+    you usually need some way to initialize them via the constructor. 
+    Some attribute might not be mandatory, therefore on some occasions you can get by with a few overloads 
+    adding more parameters as needed.   </p>
+<p>Consider the following (contrieved) example from the world of soccer. 
+    I have picked a few attributes that encapsulate the concept of a <code>Team</code>.</p>
+
+{% highlight C# %}
+namespace Soccer
+{
+    public enum Color
+    {
+        White,
+        Red,
+        Green,
+        Blue
+    }
+
+    public class Team
+    {
+        string Name { get; set; }
+        string NickName { get; set; }
+        Color ShirtColor { get; set; }
+        string HomeTown { get; set; }
+        string Ground { get; set; }
+
+        public Team(
+            string name,
+            string nickName,
+            Color shirtColor,
+            string homeTown,
+            string ground)
+        {
+            Name = name;
+            NickName = nickName;
+            ShirtColor = shirtColor;
+            HomeTown = homeTown;
+            Ground = ground;
+        }
+    }
+}
+{% endhighlight %}
+
+<p>Let's try initializing one team:</p>
+
+{% highlight C# %}
+    Team team1 = new Team(
+    "Manchester United",
+    "The Red Devils",
+    Color.Red,
+    "Manchester",
+    "Old Trafford");
+{% endhighlight %}
+
+<p>In this case we are passing 5 arguments into the constructor. Consider that most of the parameters is a string, therefore it's quite easy to get confused and invert the order of some parameter (the first two or the last two). The compiler would not be able to help in this case.</p>
+<p>What may help here is a builder object with a <a href="http://en.wikipedia.org/wiki/Fluent_interface">fluent interface</a> which can help specifying all the attributes of the team. Something like the following:</p>
+
+{% highlight C# %}
+TeamBuilder tb = new TeamBuilder();
+Team team2 =
+    tb.CreateTeam("Real Madrid")
+        .WithNickName("Los Merengues")
+        .WithShirtColor(Color.White)
+        .FromTown("Madrid")
+        .PlayingAt("Santiago Bernabeu")
+        .Build();
+{% endhighlight %}
+
+<p>Let's see the code for the <code>TeamBuilder</code> class:</p>
+
+{% highlight C# %}
+public class TeamBuilder
+{
+    private string name;
+    private string nickName;
+    private Color shirtColor;
+    private string homeTown;
+    private string ground;
+
+    public TeamBuilder CreateTeam(string name)
+    {
+        this.name = name;
+        return this;
+    }
+
+    public TeamBuilder WithNickName(string nickName)
+    {
+        this.nickName = nickName;
+        return this;
+    }
+
+    public TeamBuilder WithShirtColor(Color shirtColor)
+    {
+        this.shirtColor = shirtColor;
+        return this;
+    }
+
+    public TeamBuilder FromTown(string homeTown)
+    {
+        this.homeTown = homeTown;
+        return this;
+    }
+
+    public TeamBuilder PlayingAt(string ground)
+    {
+        this.ground = ground;
+        return this;
+    }
+
+    public Team Build()
+    {
+        return new Team(name, nickName, shirtColor, homeTown, ground);
+    }
+}
+{% endhighlight %}
+
+<p>The only catch in the solution above is that the caller needs to call <code>Build()</code> at the end of the call chain.</p>
+<p>We can improve the solution using an <a href="http://msdn.microsoft.com/en-us/library/z5z9kes2%28VS.71%29.aspx">
+implicit user-defined type conversion operator</a>:</p>
+
+{% highlight C# %}
+public class TeamBuilder
+{
+    private string name;
+    private string nickName;
+    private Color shirtColor;
+    private string homeTown;
+    private string ground;
+
+    public TeamBuilder CreateTeam(string name)
+    {
+        this.name = name;
+        return this;
+    }
+
+    public TeamBuilder WithNickName(string nickName)
+    {
+        this.nickName = nickName;
+        return this;
+    }
+
+    public TeamBuilder WithShirtColor(Color shirtColor)
+    {
+        this.shirtColor = shirtColor;
+        return this;
+    }
+
+    public TeamBuilder FromTown(string homeTown)
+    {
+        this.homeTown = homeTown;
+        return this;
+    }
+
+    public TeamBuilder PlayingAt(string ground)
+    {
+        this.ground = ground;
+        return this;
+    }
+
+    // CONVERSION OPERATOR
+    public static implicit operator Team(TeamBuilder tb)
+    {
+        return new Team(
+            tb.name, 
+            tb.nickName, 
+            tb.shirtColor, 
+            tb.homeTown, 
+            tb.ground);
+    }
+{% endhighlight %}
+
+<p>This allows you to create new teams in a more natural way as follows:</p>
+
+{% highlight C# %}
+TeamBuilder tb = new TeamBuilder();
+
+Team team3 = tb.CreateTeam("Chelsea")
+    .WithNickName("The blues")
+    .WithShirtColor(Color.Blue)
+    .FromTown("London")
+    .PlayingAt("Stamford Bridge");
+{% endhighlight %}
+
+<p>The above solution, albeit quite simple, is a good starting point. To make it 
+    ready for real-world code, you should making it more robust with some error checking 
+    (what happens if I omit some call from the chain? If I pass an invalid argument? etc...).</p>
+<p>More, you might want to hide the actual implementation from the clients and extract an 
+    interface or abstract class from the concrete <code>TeamBuilder</code>. 
+    This is left to the reader as an excercise :)</p>
+

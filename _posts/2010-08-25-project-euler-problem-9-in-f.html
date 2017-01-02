@@ -1,0 +1,81 @@
+---
+layout: post
+title: Project Euler Problem 9 in F#
+date: 2010-08-25 17:33:02.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- ".NET"
+- F#
+tags:
+- algorithm
+- F#
+- functional
+meta:
+  _edit_last: '1'
+  _aioseop_keywords: Pythagorean Triple, Euler, algorithm, f#, fsharp
+  ks_metadata: a:7:{s:4:"lang";s:2:"en";s:8:"keywords";s:44:"Pythagorean Triple,Euler,algorithm,f#,fsharp";s:19:"keywords_autoupdate";s:1:"0";s:11:"description";s:44:"A
+    solution to project Euler Problem 9 in F#.";s:22:"description_autoupdate";s:1:"0";s:5:"title";s:29:"Project
+    Euler Problem 9 in F#";s:6:"robots";s:12:"index,follow";}
+  _aioseop_title: Project Euler Problem 9 in F#
+  _aioseop_description: A solution to project Euler Problem 9 in F#.
+  _wp_old_slug: ''
+  dsq_thread_id: '149554730'
+---
+<p><a href="http://projecteuler.net/index.php?section=problems&id=9">Project Euler Problem 9</a> introduces the 
+interesting mathematical concept of <a href="http://en.wikipedia.org/wiki/Pythagorean_triple">Pythagorean Triple</a>. 
+Let's have a look at the question:</p>
+<blockquote><p>
+A Pythagorean triplet is a set of three natural numbers, a < b < c, for which,<br />
+a^2 + b^2 = c^2</p>
+<p>For example, 3^2 + 4^2 = 9 + 16 = 25 = 5^2</p>
+<p>There exists exactly one Pythagorean triplet for which a + b + c = 1000.<br />
+Find the product abc.
+</p></blockquote>
+<p>As usual, I first show my solution and then comment on the approach:</p>
+
+{% highlight F# %}
+// generate triplets using Euclid's Formula
+let pythagorean_triplets top =
+    [ for m in 1 .. top do
+          for n in 1 .. m-1 do
+          let a = m*m-n*n
+          let b = 2*m*n
+          let c = m*m+n*n
+          yield [a;b;c] ]
+
+// multiply all the values of a list     
+let multiply_list list =
+    List.fold (fun acc elem -> acc*elem) 1 list
+
+// find a triplet where the sum of values 
+// is equal to a given number
+let find_triplet_with_sum sum =
+    pythagorean_triplets sum
+    |> List.find (fun [a;b;c] -> a+b+c=sum)
+
+let problem_9 () =
+    find_triplet_with_sum 1000 
+    |> multiply_list
+{% endhighlight %}
+
+<p>Let's go through the solution step by step:</p>
+<ul>
+<li>The first function, <code>pythagorean_triplets</code> uses 
+<a href="http://en.wikipedia.org/wiki/Pythagorean_triple#Generating_a_triple">Euclid's Formula</a> to enumerate 
+all possible Pytagorean Triplets up to a given threshold. The formula can be summarized like this:<br />
+<cite>\(a = m^2 - n^2, b = 2mn, c = m^2 + n^2 \),  where \(m\) and \(n\) are positive integers with \(m > n\).</cite></p>
+<p>It's interesting to note that each item of the list is itself a <em>list</em> of three numbers.
+I could have generated a tuple, but since in the end I need to multiply all the 3 values together, 
+the list was more straightfoward to use.</p>
+</li>
+<li><code>multiply_list</code> is just a convenience function to multiply all the elements of a list together</li>
+<li><code>find_triplet_with_sum</code> does the heavy work of generating the actual triplets 
+picking the first one where the sum is equal to a given value.</li>
+<li> At the end I just put the pieces together and solve the problem. </li>
+</ul>
+<p>One caveat: Euclid's Formula does not generate <em>all</em> 
+Pytagorean Triplets(there are other formulas that do). I can say that I have been 
+lucky that it generated the one requested by the Project's Euler problem. The code above might not 
+work if the goal is changed to find a triplet with a different product.</p>

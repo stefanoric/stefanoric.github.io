@@ -1,0 +1,130 @@
+---
+layout: post
+title: Project Euler Problem 18 in F#
+date: 2011-01-10 13:18:39.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- F#
+tags:
+- algorithm
+- F#
+- functional
+meta:
+  _edit_last: '1'
+  _aioseop_title: Project Euler Problem 18 in F#
+  _wp_old_slug: ''
+  _aioseop_description: A solution to Project Euler problem 18 in F#
+  dsq_thread_id: '206248628'
+  _aioseop_keywords: 'euler, problem 18, algorithm, dynamic programming, array2D,
+    blit, '
+---
+<p>2011 brings us yet another Project Euler problem to tackle: this time is 
+	<a href="http://projecteuler.net/index.php?section=problems&amp;id=18">Problem 18</a> one 
+	of the most interesting that I have solved so far:</p>
+<blockquote>
+<p>By starting at the top of the triangle below and moving to adjacent numbers on the row below, 
+	the maximum total from top to bottom is 23.</p>
+<p align="center"><b>3</b> <br />
+		<b>7</b> 4 <br />
+		2 <b>4</b> 6 <br />
+		8 5 <b>9</b> 3</p>
+<p>That is, 3 + 7 + 4 + 9 = 23.</p>
+<p>Find the maximum total from top to bottom of the triangle below:</p>
+<p align="center">75 <br />
+		95 64 <br />
+		17 47 82 <br />
+		18 35 87 10 <br />
+		20 04 82 47 65 <br />
+		19 01 23 75 03 34 <br />
+		88 02 77 73 07 63 67 <br />
+		99 65 04 28 06 16 70 92 <br />
+		41 41 26 56 83 40 80 70 33 <br />
+		41 48 72 33 47 32 37 16 94 29 <br />
+		53 71 44 65 25 43 91 52 97 51 14 <br />
+		70 11 33 28 77 73 17 78 39 68 17 57 <br />
+		91 71 52 38 17 14 91 43 58 50 27 29 48 <br />
+		63 66 04 68 89 53 67 30 73 16 69 87 40 31 <br />
+		04 62 98 27 23 09 70 98 73 93 38 53 60 04 23</p>
+<p><small><b>NOTE:</b> As there are only 16384 routes, it is possible to solve this problem by 
+trying every route. However, <a href="http://projecteuler.net/index.php?section=problems&amp;id=67">Problem 67</a>, 
+is the same challenge with a triangle containing one-hundred rows; it cannot be solved by brute force, and requires a clever method! ;o) </small></p>
+</blockquote>
+
+<h2>Analysis</h2>
+<p>This problem is easily solved resorting to <a href="http://en.wikipedia.org/wiki/Dynamic_programming">dynamic programming</a>, 
+which we can loosely describe as decomposing the overall problem into easier sub-problems and combining their solutions to find the final answer.</p>
+<p>In our case, if we consider the number associated with each node of the triangle as a cost, the overall problem can be expressed as <em> 
+	finding the path with maximum cost from the upper vertex to the bottom row</em>. 
+	A generic sub-problem would be the cost to reach the bottom row from a generic node at position \(i,j\).</p>
+<p>Given the cost $$c_{i,j}$$ of passing through a given node and the cost \(C_{i,j}\) of reaching the bottom row from that particular node, 
+	we can define the following truth:</p>
+<p>$$C_{i,j} = c_{i,j} + max(C_{i+1,j}, C_{i+1,j+1})$$</p>
+<p>or, in other words, from each node \(i,j\) the cost of reaching the bottom is equal to the cost of the node itself 
+	plus the maximum path between one of the two adjacent nodes from the row below.</p>
+	
+<p>Let's confirm why this is the case with the help of the following figure: consider for example the 
+	first node from the left in the fourteenth (last-but-one) row (having cost <strong>63</strong>): 
+	from there you can move to the bottom either going to node <strong>04</strong> or node <strong>62</strong>. 
+	Clearly, if we want to pick the highest cost, we need to pick <strong>62 </strong>(and we mark this choice with a grey line). 
+	The overall cost to reach the bottom from that node is thus 63 + max (04, 62) = <strong>125</strong>.</p>
+
+<p>Let's consider now the second node from that row (<strong>66</strong>).
+ From there, we have to choose between node <strong>62</strong> and <strong>98</strong>: the highest cost path from 
+ there is thus 66 + max(62, 98) = <strong>164</strong>. We can continue for all the nodes in the row to find 
+ the highest cost path from each node; the solution to such sub-problems is indicated in gray close to each node.</p>
+<p><a href="http://stefanoricciardi.com/blog/wp-content/uploads/2010/12/ProjectEuler18_2rows.png">
+<img alt="ProjectEuler18_2rows" border="0" height="89" src="{{ site.baseurl }}/assets/ProjectEuler18_2rows_thumb.png" 
+style="border-right-width: 0px; display: inline; border-top-width: 0px; border-bottom-width: 0px; border-left-width: 0px" 
+title="ProjectEuler18_2rows" width="454" /></a></p>
+
+<p>Having solved all sub-problems for row 14, we can now consider the row immediately above. In the following figure, 
+	I have replaced row 14 with the solutions of the sub-problems that we had just solved; 
+	the row above is row 13. Please note how we dont care about row 15 anymore: its contribution to the 
+	overall problem is already captured in each sub-problems' solution for row 14! Hence, we proceed in 
+	a similar way to solve the sub-problems for the row 13 just as we did for row 14:</p>
+<p><a href="http://stefanoricciardi.com/blog/wp-content/uploads/2010/12/ProjectEuler18_2rows1.png">
+<img alt="ProjectEuler18_2rows" border="0" height="68" src="{{ site.baseurl }}/assets/ProjectEuler18_2rows_thumb1.png"
+ style="border-right-width: 0px; display: inline; border-top-width: 0px; border-bottom-width: 0px; border-left-width: 0px" title="ProjectEuler18_2rows" width="529" /></a></p>
+<p>We continue to follow a similar pattern moving upwards row after row, until we reach the tip of the triangle, 
+	always considering two rows at a time.</p>
+
+<h2>Solution</h2>
+{% highlight F# %}
+
+let a = Array2D.zeroCreate<int> 15 15
+
+a.[0,0] <- 75
+a.[1,0] <- 95
+a.[1,1] <- 64
+a.[2,0] <- 17
+a.[2,1] <- 47
+a.[2,2] <- 82
+a.[3,0] <- 18
+// other initializations omitted for clarity
+// full listing available on Github
+// (https://github.com/stefanoric/YAPEFSHARP)
+a.[14,10] <- 38
+a.[14,11] <- 53
+a.[14,12] <- 60
+a.[14,13] <- 04
+a.[14,14] <- 23 
+
+let costs = Array2D.zeroCreate<int> 15 15
+
+// costs for bottom row is the same as bottom row values
+Array2D.blit a 14 0 costs 14 0 1 15 |> ignore
+
+let max a b = if a > b then a else b
+
+for i in 13 .. -1 .. 0 do
+    for j in 0 .. i do
+        costs.[i,j] <- a.[i,j] + max costs.[i+1,j] costs.[i+1, j+1]
+        
+let result () =
+    costs.[0,0]
+{% endhighlight %}
+<p>Most of the code for this solution is needed just to initialize the two dimensional array containing the triangle. For reading convenience, I have skipped most of the uninteresting rows, but you can find the complete solution on <a href="https://github.com/stefanoric/YAPEFSHARP">Github</a>.</p>
+<p>So, we have a matrix (2D array) for the cost of each nodes and another matrix for the solutions of the sub-problems associated to each node. Trivially, the costs and the solutions coincide for the bottom row (note the handy <code>Array2D.blit</code> function to copy a whole row from one matrix to the other).</p>
+<p>Then, with a loop we move backward from the last-but-one row up to the tip of the triangle calculating the sub-problems solutions as explained above.</p>

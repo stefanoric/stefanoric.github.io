@@ -1,0 +1,82 @@
+---
+layout: post
+title: The Difference Between Encapsulation and Information Hiding
+date: 2009-12-06 22:01:24.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Design and Patterns
+tags:
+- design
+- OOP
+meta:
+  _edit_last: '1'
+  _wpas_done_twitter: '1'
+  _wpas_mess: 'Blogged: The Difference Between Encapsulation and Information Hiding
+    : http://wp.me/puaLG-4g'
+  dsq_thread_id: '149554562'
+---
+<p><a title="Locks by Leo Reynolds, on Flickr" href="http://www.flickr.com/photos/lwr/863297155/">
+<img style="float:left;margin-right:20px;" src="{{ site.baseurl }}/assets/863297155_17b9031799_m.jpg" alt="Locks" width="240" height="240" /></a>If you ask people familiar with Object Oriented Design which are the most important concepts of the paradigm to them, you will surely hear things like <em>classes</em>, <em>inheritance</em>, <em>polymorphism</em>. Some may talk about <em>genericity</em>; 
+somebody may even mention <em>encapsulation</em> or <em>information hiding</em>.</p>
+<p>In fact, many designers use the words encapsulation and information hiding interchangeably.</p>
+<h3>Encapsulation</h3>
+<p>In his book  <a href="http://www.amazon.com/Fundamentals-Object-Oriented-Design-Meilir-Page-Jones/dp/020169946X/ref=sr_1_1?ie=UTF8&amp;s=books&amp;qid=1260132242&amp;sr=8-1-spell">Fundamental Of Object Oriented Design in UML</a> Meilir Page-Jones gives the following definition for encapsulation:</p>
+<blockquote><p><strong>Encapsulation</strong> is the grouping of related ideas into one unit, 
+which can thereafter be referred to by a single name.</p></blockquote>
+<p><em>Single name</em> is here the key word to get an insight of what encapsulation is about: 
+a subroutine (or <em>function</em> as we call it nowadays), for example, is a name that refers to a unit of code. 
+Something  that instead of being repeated over and over in the source code is factored out in a single place.</p>
+<p>As such the function is the simplest level of encapsulation and abstraction: a designer can 
+  refer to it by name as a single entity and even forget the details of the internals and only 
+  remember its interface.</p>
+<p>Encapsulation in the object oriented world expands on this concept from the subroutine 
+  level to the object level: attributes that represents the state of an object and the methods 
+  that work on them are packaged into an object type.</p>
+<h3>Information Hiding</h3>
+<p>The concept of <strong>information hiding</strong> is very similar and was first 
+introduced by Parnas in his seminal paper 
+"<a title="http://www.cs.umd.edu/class/spring2003/cmsc838p/Design/criteria.pdf" 
+rel="nofollow" href="http://www.cs.umd.edu/class/spring2003/cmsc838p/Design/criteria.pdf">On the Criteria 
+to Be Used in Decomposing Systems Into Modules"</a> (pdf) almost 40 years ago.</p>
+<p>Parnas used the term discussing about which criteria lead to good <em>modularity </em>in <em>structured programming</em>:</p>
+<blockquote><p>every module in the [...] decomposition is characterized by its knowledge of a 
+  design decision which it hides from all others. Its interface or definition was chosen to 
+  reveal as little as possible about its inner workings.</p></blockquote>
+<p>As you see, here also we talk about some separate entity or module which has some 
+  responsibility that we need fulfilled, and we are not interested about <em>how </em>it 
+  is fulfilled. But the emphasis here is a bit more about <em>hiding</em> the details from other modules (or objects in the OO world).</p>
+<p>Information hiding gives the designer the freedom to <em>modify </em>how 
+the responsibility is fulfilled by a module/object. This is especially valuable 
+at points where the design (or even the requirements) are likely to change.</p>
+<h3>Uncle Bob Helps Explaining the Difference</h3>
+<p>Maybe one of the best example explaining the difference between 
+  encapsulation and information hiding can be found in Uncle Bob's most recent book <a href="http://www.amazon.com/Clean-Code-Handbook-Software-Craftsmanship/dp/0132350882/ref=sr_1_1?ie=UTF8&amp;s=books&amp;qid=1260132316&amp;sr=1-1">Clean Code</a> (even though the author was not talking about these 2 concepts explicitely).</p>
+<p>The following type is merely encapsulated: we have created a concept representing a geometrical concept (the point in a 2D space).</p>
+
+{% highlight C# %}
+public class Point
+{
+    public double x;
+    public double y;
+}
+{% endhighlight %}
+
+<p>The following type, on the other hand, is an example of information hiding applied to the same concept:</p>
+
+{% highlight C# %}
+public interface Point
+{
+    double GetX();
+    double GetY();
+    void SetCartesian(double x, double y);
+    double GetR();
+    double GetTheta();
+    void SetPolar(double r, double theta);
+}
+{% endhighlight %}
+
+<p>In this second example, the actual implementation is completely <em>hidden</em>: the client doesn't know whether the internal representation of the point is in rectangular or polar coordinates.</p>
+<p>If you are curious and want to know more, you can refer to the following <a href="http://c2.com/cgi/wiki?EncapsulationIsNotInformationHiding">wiki</a> for more opinions on the differences (or lack thereof) between encapsulation and information hiding.</p>
+<p><em>Photo by <a href="http://www.flickr.com/people/lwr/">Leo Reynolds</a></em>.<br />

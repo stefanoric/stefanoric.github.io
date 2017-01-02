@@ -1,0 +1,95 @@
+---
+layout: post
+title: Project Euler Problem 17 in F#
+date: 2010-12-16 16:33:52.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- F#
+tags:
+- algorithm
+- F#
+- functional
+meta:
+  _edit_last: '1'
+  _aioseop_title: Project Euler Problem 17 in F#
+  _wp_old_slug: ''
+  _aioseop_description: A solution to Project Euler problem 17 in F#
+  _aioseop_keywords: f#,fsharp,euler, algorithm
+  dsq_thread_id: '192141741'
+---
+<p>Project Euler problem 17 turned out to be quite an easy one.</p>
+<blockquote>
+<p>If the numbers 1 to 5 are written out in words: one, two, three, four, five, then there are 3 + 3 + 5 + 4 + 4 = 19 letters used in total.</p>
+<p>If all the numbers from 1 to 1000 (one thousand) inclusive were written out in words, how many letters would be used?</p>
+<p><small>NOTE: Do not count spaces or hyphens. For example, 342 (three hundred and forty-two) contains 23 letters and 115 (one hundred and fifteen) contains 20 letters. The use of "and" when writing out numbers is in compliance with British usage.</small></p>
+</blockquote>
+<h2>Solution</h2>
+<p>The solution this time is almost trivial:</p>
+<ul>
+<li>"<em>Zero</em>" is considered to have 0 length (it will be obvious later on why this is the case)</li>
+<li>Numbers from <strong>1</strong> to <strong>19</strong> have their own unique names (i.e. they are not composed by putting together more words)</li>
+<li>Numbers from <strong>20</strong> to<strong> 99</strong> are combined putting together a word like "<em>thirty</em>" and a number from 0 to 9. If the number is zero, we don't add anything (we don't say <em>"twenty and zero"</em>)</li>
+<li>Numbers from <strong>100 </strong>to <strong>999 </strong>are combined putting together a words like "<em>two hundred and</em>" plus a number from 0 to 99 composed as explained above. Exact multiples of <strong>100 </strong>are exception in that they don't have another trailing number (again, we don't say "<em>two hundred and zero</em>").</li>
+</ul>
+
+{% highlight F# %}
+let thousand    = "oneThousand"
+let hundred     = "hundred"
+let hundred_and = "hundredAnd"
+
+let zero_to_nine = new System.Collections.Generic.Dictionary<int, string="">()
+zero_to_nine.[0] <- ""
+zero_to_nine.[1] <- "one"
+zero_to_nine.[2] <- "two"
+zero_to_nine.[3] <- "three"
+zero_to_nine.[4] <- "four"
+zero_to_nine.[5] <- "five"
+zero_to_nine.[6] <- "six"
+zero_to_nine.[7] <- "seven"
+zero_to_nine.[8] <- "eight"
+zero_to_nine.[9] <- "nine"
+
+let ten_to_nineteen =  new System.Collections.Generic.Dictionary<int, string="">()
+ten_to_nineteen.[10] <- "ten"
+ten_to_nineteen.[11] <- "eleven"
+ten_to_nineteen.[12] <- "twelve"
+ten_to_nineteen.[13] <- "thirteen"
+ten_to_nineteen.[14] <- "fourteen"
+ten_to_nineteen.[15] <- "fifteen"
+ten_to_nineteen.[16] <- "sixteen"
+ten_to_nineteen.[17] <- "seventeen"
+ten_to_nineteen.[18] <- "eighteen"
+ten_to_nineteen.[19] <- "nineteen"
+
+let twenty_to_ninety = new System.Collections.Generic.Dictionary<int, string="">()
+twenty_to_ninety.[20] <- "twenty"
+twenty_to_ninety.[30] <- "thirty"
+twenty_to_ninety.[40] <- "forty"
+twenty_to_ninety.[50] <- "fifty"
+twenty_to_ninety.[60] <- "sixty"
+twenty_to_ninety.[70] <- "seventy"
+twenty_to_ninety.[80] <- "eighty"
+twenty_to_ninety.[90] <- "ninety"
+
+let len s = String.length s
+
+let calculate_letters_under_one_hundred n =
+    match n with
+        | x when x < 10 -> len zero_to_nine.[x]
+        | x when x < 20 -> len ten_to_nineteen.[x]
+        | x when x < 100 -> len twenty_to_ninety.[((x / 10) * 10)] + len zero_to_nine.[(x % 10)]
+        | _ -> failwith "Number is too big!"
+
+let calculate_letters n =
+    match n with
+        | x when x < 100 -> calculate_letters_under_one_hundred x
+        | x when ((x < 1000) && (x % 100 = 0)) -> len zero_to_nine.[(x / 100)] + len hundred
+        | x when x < 1000 -> len zero_to_nine.[(x / 100)] + len hundred_and +  calculate_letters_under_one_hundred (x % 100)
+        | 1000 -> len thousand
+        | _ -> failwith "Numer is too big!"
+
+let all_letters_up_to n =
+    List.sumBy (fun i -> calculate_letters i) [1..n]
+{% endhighlight %}

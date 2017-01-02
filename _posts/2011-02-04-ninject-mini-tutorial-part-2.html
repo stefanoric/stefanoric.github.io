@@ -1,0 +1,214 @@
+---
+layout: post
+title: Ninject Mini Tutorial - Part 2
+date: 2011-02-04 14:17:43.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- ".NET"
+- C#
+- Design and Patterns
+tags:
+- C#
+- Design and Patterns
+- IoC
+- ninject
+- OOP
+meta:
+  _edit_last: '1'
+  _aioseop_keywords: ninject, tutorial, IoC, dotnet, dependency injection, inversion
+    of control
+  _aioseop_description: A brief tutorial to Ninject IoC container
+  _aioseop_title: Ninject Mini Tutorial - Part 2
+  wpsd_autopost: '1'
+  _wp_old_slug: ''
+  dsq_thread_id: '226916257'
+  dsq_needs_sync: '1'
+---
+<p><em>Go to <a href="/2011/01/21/ninject-mini-tutorial-part-1/">Part 1</a></em></p>
+
+<p></p>
+<h2>Controlling the Life Cycle of your Objects</h2>
+<p>In the previous post we did not concern ourselves with the lifecycle of 
+    the object returned from Ninject kernel. Ninject provides the following 4 built-in 
+    lifecycles (<em>scopes</em>):</p>
+<ol>
+<li>Transient (default)</li>
+<li>Singleton (only one instance)</li>
+<li>Thread (one instance per thread)</li>
+<li>Request (one instance per web request).</li>
+</ol>
+<p>You can create <em>custom scopes</em> if needed.</p>
+<h4>Singleton:</h4>
+
+{% highlight c# %}
+using (IKernel kernel = new StandardKernel())
+{
+    kernel.Bind<ITaxCalculator>()
+        .To<TaxCalculator>()
+        .InSingletonScope()
+        .WithConstructorArgument("rate", .2M);
+
+    var tc1 = kernel.Get<ITaxCalculator>();
+    var tc2 = kernel.Get<ITaxCalculator>();
+
+    Assert.Same(tc1, tc2);
+}
+{% endhighlight %}
+
+<h4>Transient:</h4>
+
+{% highlight c# %}
+using (IKernel kernel = new StandardKernel())
+{
+    kernel.Bind<ITaxCalculator>()
+        .To<TaxCalculator>()
+        .InTransientScope() 
+        .WithConstructorArgument("rate", .2M);
+
+        var tc1 = kernel.Get<ITaxCalculator>();
+        var tc2 = kernel.Get<ITaxCalculator>();
+
+        Assert.NotSame(tc1, tc2);
+}
+{% endhighlight %}
+
+<h2>More Details on Injection Patterns</h2>
+<p>With Ninject you can inject:</p>
+<ol>
+<li>Constructor parameters</li>
+<li>Properties</li>
+<li>Methods</li>
+</ol>
+<p>Before considering each one in turn, we just need to introduce the <code>[Inject]</code> attribute which may be 
+used to tag constructors, properties and methods requiring injection. 
+Obviously, by tagging constructors, properties or methods, your objects cease 
+to be <a href="http://en.wikipedia.org/wiki/Plain_Old_CLR_Object">POCO</a>s.</p>
+<h3>Constructor Injection</h3>
+<p>We have already seen an example of constructor injection in <a href="/2011/01/21/ninject-mini-tutorial-part-1/">Part I</a> 
+when the kernel auto-magically injected an implementation of <code>ITaxCalculator</code> to the <code>Sale Area</code> constructor. 
+In that case, even if we didn't tag the constructor with the <code>[Inject]</code> attribute, the kernel was able to 
+perform the required binding. How?</p>
+<p>That was actually a special case: when there is <em>only one</em> constructor available, 
+the tagging is not needed. On the other hand, if there's more than one constructor defined, 
+then then kernel can inject a dependency to only one constructor that needs to have the <code>[Inject]</code> attribute:</p>
+
+{% highlight c# %}
+public class Sale3
+{
+    private readonly ITaxCalculator taxCalculator;
+
+    public Sale3() { }
+
+    [Inject]
+    public Sale3(ITaxCalculator taxCalculator)
+    {
+        this.taxCalculator = taxCalculator;
+    }
+
+    // other stuff
+}
+{% endhighlight %}
+
+<h3>Properties Injection</h3>
+<p>Instead of passing in the dependencies through the constructor, you can also inject them as properties. 
+    Injecting properties is pretty straightforward:</p>
+
+{% highlight c# %}
+public class Sale2 
+{ 
+    [Inject] 
+    public ITaxCalculator TaxCalculator { get; set; } 
+    
+    // implicit default constructor and other stuff... 
+
+    public decimal GetTotal() 
+    { 
+        decimal total = 0M; 
+        foreach (var item in lineItems) 
+        { 
+            total += TaxCalculator.CalculateTax(item.TotalPrice) 
+                    + item.TotalPrice; 
+        } 
+        
+        return total; 
+    } 
+}
+{% endhighlight %}
+
+<p>Usage (note that we never explicitely set the <code>TaxCalculator</code>):</p>
+
+{% highlight c# %}
+using (IKernel kernel = new StandardKernel())
+{
+    kernel.Bind<ITaxCalculator>()
+                  .To<TaxcCalculator>()
+                  .WithConstructorArgument("rate", .2M);
+
+    var lineItem1 = new SaleLineItem("Gone with the wind", 10M, 1);
+    var lineItem2 = new SaleLineItem("Casablanca", 5M, 2);
+
+    var sale = kernel.Get<Sale2>(); // property injection!
+    sale.AddItem(lineItem1);
+    sale.AddItem(lineItem2);
+
+    Assert.Equal(24M, sale.GetTotal());
+}
+{% endhighlight %}
+
+<p>There's an important caveat: if you have 2 or more properties injected, the order in which each dependency is injected is not predictable. 
+    This might complicate your design, if those dependencies are coupled somehow (e.g. dependency A needs dependency B). 
+    For this kind of situations, constructor or method injection is usually preferred.</p>
+<h3>Methods Injection</h3>
+<p>Finally, it's also possible to tag methods for injection. As with constructor parameters, its possible to inject more than one value at once.</p>
+
+{% highlight c# %}
+public class Sale4
+{
+    private ITaxCalculator taxCalculator;
+
+    // other stuff
+
+    // method injection, will be called by the kernel
+    [Inject]
+    public void SetTaxCalculator(ITaxCalculator taxCalculator)
+    {
+        this.taxCalculator = taxCalculator;
+    }
+
+    public decimal GetTotal()
+    {
+        decimal total = 0M;
+        foreach (var item in lineItems)
+        {
+            total += taxCalculator.CalculateTax(item.TotalPrice) 
+                  + item.TotalPrice;
+        }
+
+        return total;
+    }
+}
+{% endhighlight %}
+
+<p>Usage (note that we never explicitely call the <code>SetTaxCalculator</code>):</p>
+
+{% highlight c# %}
+using (IKernel kernel = new StandardKernel())
+{
+    kernel.Bind<ITaxCalculator>()
+          .To<TaxCalculator>()
+          .WithConstructorArgument("rate", .2M);
+
+    var lineItem1 = new SaleLineItem("Gone with the wind", 10M, 1);
+    var lineItem2 = new SaleLineItem("Casablanca", 5M, 2);
+
+    var sale = kernel.Get<Sale4>(); // method injection!
+    sale.AddItem(lineItem1);
+    sale.AddItem(lineItem2);
+
+    Assert.Equal(24M, sale.GetTotal());
+}
+{% endhighlight %}
+
+<p><em>Go to <a href="/2011/01/21/ninject-mini-tutorial-part-1/">Part 1</a></em></p>

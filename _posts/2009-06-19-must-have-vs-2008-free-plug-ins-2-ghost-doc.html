@@ -1,0 +1,111 @@
+---
+layout: post
+title: 'Must have VS 2008 Free Plug-ins (2): Ghost-Doc'
+date: 2009-06-19 22:29:39.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Tools
+tags:
+- C#
+- Ghost-Doc
+- Tools
+- Visual Studio 2008
+meta:
+  _edit_last: '1'
+  ks_metadata: 'a:7:{s:4:"lang";s:2:"en";s:8:"keywords";s:64:"doc,ghost,summary,priceofgoods,double,class,public,vatpercentage";s:19:"keywords_autoupdate";s:1:"1";s:11:"description";s:146:"Doc
+    plug-in for Visual Studio is something like that: instead of typing in the XML
+    documentation for your source code yourself, Ghost-Doc does the";s:22:"description_autoupdate";s:1:"1";s:5:"title";s:0:"";s:6:"robots";s:12:"index,follow";}'
+  dsq_thread_id: '149554544'
+---
+<p>According to the Wikipedia, a <em><a href="http://en.wikipedia.org/wiki/Ghostwriter">ghostwriter</a></em> is a</p>
+<blockquote><p>professional <a href="http://en.wikipedia.org/wiki/Writer">writer</a> who is paid to write books,
+articles, stories, reports, or other texts that are officially credited to another person.</p></blockquote>
+<p><span>As the name seems to imply, <a href="http://submain.com/products/ghostdoc.aspx">Ghost-Doc</a> 
+plug-in for Visual Studio is something like that: instead of typing in the XML documentation for your 
+source code yourself, Ghost-Doc does the heavy-lifting and fills it for you.</span></p>
+<p>Suppose you have a very simple class like the following:</p>
+
+{% highlight C# %}
+public sealed class TestGhostDoc
+{
+    double CalculateVAT(double priceOfGoods, double VATPercentage)
+    {
+        return (priceOfGoods + priceOfGoods * VATPercentage);
+    }
+}
+{% endhighlight  %}
+
+<p>Now you want to add XML documentation for the CalculateVAT member function. 
+    All you have to do is to right-click somewhere on line 3 (I prefer to use 
+    the <tt>CTRL + SHIFT + D</tt> since <a href="/2009/06/10/most-useful-visual-studio-2008-keyboard-shortcuts/">I 
+    love shortcuts</a>), select “Document This”, and Ghost-Doc will fill 
+    the XML documentation for you like the following:</p>
+    
+{% highlight C# %}
+public sealed class TestGhostDoc
+{
+    /// <summary>
+    /// Calculates the VAT.
+    /// </summary>
+    /// <param name="priceOfGoods">The price of goods</param>
+    /// <param name="VATPercentage">The VAT percentage</param>
+    /// <returns></returns>
+    double CalculateVAT(double priceOfGoods, double VATPercentage)
+    {
+        return priceOfGoods += priceOfGoods * VATPercentage;
+    }
+}
+{% endhighlight %}
+
+<p>As you can see, Ghost-Doc, beside filling the structure for you, also fills the contents 
+    using a set of rules based on the order of the words (the only thing that is left 
+    is filling the content of the <tt>returns</tt> tag). Note that words are 
+    recognized successfully only if you use the recommended Camel and Pascal casing 
+    appropriately (which you ought to be doing anyway because you 
+    <a href="/2009/06/12/must-have-vs-2008-free-plug-ins-1-style-cop/">follow 
+    to the naming conventions</a>).</p>
+<p>Member functions is not the only place where you can use Ghost-Doc: 
+    class names, constructors, enums, properties, event, etc… they 
+    are all supported as expected.</p>
+    
+{% highlight C# %}
+namespace TestGhostDoc
+{
+    /// <summary>
+    ///
+    /// </summary>
+    public sealed class User
+    {
+        /// <summary>
+        /// Gets or sets the first name.
+        /// </summary>
+        /// <value>The first name.</value>
+        public string FirstName { get; set;  }
+
+        /// <summary>
+        /// Gets the address.
+        /// </summary>
+        /// <value>The address.</value>
+        public string Address { get; }
+    }
+}
+{% endhighlight %}
+
+<p>Can you spot the difference between the documentations of the 
+    two properties that Ghost-Doc has generated?</p>
+<h3>Advanced use</h3>
+<p>Ghost-Doc has a complete customization window where you can:</p>
+<ul>
+<li>modify/add templates that Ghost-Doc uses to document a language element</li>
+<li>define your own acronyms, that will always be rendered in all-caps by Ghost-Doc,
+     even if you have written them in lower case inside a language element name to
+      be compliant to the naming conventions</li>
+<li>modify/add the list of words which define qualities, that Ghost-Doc will reorder 
+    in a special way. For example, since <em>size</em> is on this special list 
+    "FileBufferSize will be worded as “the size of the file buffer” instead of “the file buffer size” .</li>
+<li>modify/add the list of words that shall never be preceded by “the” (the so called “no the” words).</li>
+<li>Modify the way <em>true</em>, <em>false</em>, and <em>null </em>keywords are represented</li>
+<li>Create a custom text that will be appended to all comments the first time they are created; this text can optionally be dynamic and include the name of the author, or the current date, etc.. (this would be a bit over the top IMHO since it would be repeated for each and every function, property, etc…).</li>
+</ul>

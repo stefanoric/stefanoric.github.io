@@ -1,0 +1,60 @@
+---
+layout: post
+title: Project Euler Problem 3 in F#
+date: 2010-07-01 10:24:02.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- ".NET"
+- F#
+tags:
+- algorithm
+- F#
+meta:
+  _edit_last: '1'
+  ks_metadata: a:7:{s:4:"lang";s:2:"en";s:8:"keywords";s:53:"f#,fsharp,euler,prime
+    numbers,factorization,algorithm";s:19:"keywords_autoupdate";s:1:"0";s:11:"description";s:30:"Project
+    Euler problem 3 in F#.";s:22:"description_autoupdate";s:1:"0";s:5:"title";s:29:"Project
+    Euler Problem 3 in F#";s:6:"robots";s:12:"index,follow";}
+  _aioseop_description: Project Euler Problem 3 in F#
+  _aioseop_keywords: f#,fsharp,euler,prime numbers,factorization,algorithm
+  _aioseop_title: Project Euler Problem 3 in F#
+  dsq_thread_id: '149554691'
+---
+<p>Continuing with my journey <a href="/2010/05/31/best-resources-to-learn-f/">learning F#</a> I 
+have tackled <a href="http://projecteuler.net">Project Euler</a> problem number 3, which asks:</p>
+<blockquote><p>The prime factors of 13195 are 5, 7, 13 and 29.</p>
+<p>What is the largest prime factor of the number 600851475143</p></blockquote>
+<p>This problem deals with the fascinating problem of 
+  <a href="http://en.wikipedia.org/wiki/Integer_factorization">prime numbers factorization</a>, 
+  which is considered a <em>hard</em> problem. So hard that our current cryptography schemes rely on this property.</p>
+<p>This is my solution:</p>
+
+{% highlight F# %}
+open System
+
+let is_prime x =
+    let rec check i =
+        double i > sqrt (double x) || (x % i <> 0L && check (i + 1L))
+    check 2L                 
+
+let big_number_factors n =
+    let factors = seq {
+        let limit = n / 2L 
+        for i in 2L .. limit do
+            if n % i = 0L && is_prime i then yield i }
+    Seq.max factors
+{% endhighlight %}
+
+<p>A few comments:</p>
+<ul>
+<li>The first function (<code>is_prime</code>) is a simple <a href="http://en.wikipedia.org/wiki/Trial_division">
+trial division</a> to determine whether a given number is prime. 
+There are cleverer algorithms to find prime numbers: 
+see for example <a href="http://www.haskell.org/haskellwiki/Prime_numbers">here</a>. For an interesting discussion 
+you can also have a look at <i><a href="http://www.cs.hmc.edu/~oneill/papers/Sieve-JFP.pdf">The Genuine 
+Sieve of Erathostenes</a></i> by Melissa O'Neill.</li>
+<li>The second function uses <a href="http://en.wikipedia.org/wiki/List_comprehension">comprehension</a> 
+to create the list of primes which are factors for the input value. At the end we simply return the biggest factor.</li>
+</ul>

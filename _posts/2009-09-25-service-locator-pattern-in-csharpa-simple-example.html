@@ -1,0 +1,107 @@
+---
+layout: post
+title: 'Service Locator Pattern in C#: A Simple Example'
+date: 2009-09-25 14:24:31.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Design and Patterns
+tags:
+- C#
+- design
+- Design and Patterns
+- OOP
+meta:
+  _edit_last: '1'
+  _wpas_skip_twitter: '1'
+  ks_metadata: 'a:7:{s:4:"lang";s:2:"en";s:8:"keywords";s:26:"service locator,pattern,c#";s:19:"keywords_autoupdate";s:1:"0";s:11:"description";s:156:"Service
+    Locator is a common design pattern that allows decoupling clients of services
+    (described by a public interface) from the concrete class implementing";s:22:"description_autoupdate";s:1:"1";s:5:"title";s:47:"Service
+    Locator Pattern in C#: A Simple Example";s:6:"robots";s:12:"index,follow";}'
+  _aioseop_title: 'Service Locator Pattern in C#: A Simple Example'
+  _aioseop_description: 'Service Locator Pattern in C#: A Simple Example'
+  _aioseop_keywords: service locator, pattern, c#
+  dsq_thread_id: '149554628'
+---
+<p>A Service Locator is a common design pattern that allows decoupling clients of 
+	services (described by a public interface) from the concrete class implementing those services. 
+	Martin Fowler has a great introduction on the topic in his 
+	<a href="http://www.martinfowler.com/articles/injection.html">Inversion of Control 
+	Containers and the Dependency Injection pattern</a>.</p>
+<p>What follows is a very simple service locator implementation in C# based on generics.</p>
+<p>Let's start defining the contract of a service locator.</p>
+
+{% highlight C# %}
+public interface IServiceLocator
+{
+    T GetService<T>();
+}
+{% endhighlight %}
+
+<p>Now let's see a very simple implementation of this contract:</p>
+
+{% highlight C# %}
+class ServiceLocator : IServiceLocator
+{
+	// map that contains pairs of interfaces and
+	// references to concrete implementations
+	private IDictionary<object, object> services;
+
+	internal ServiceLocator()
+	{
+		services = new Dictionary<object, object>();
+
+		// fill the map
+		this.services.Add(typeof(IServiceA), new ServiceA());
+		this.services.Add(typeof(IServiceB), new ServiceB());
+		this.services.Add(typeof(IServiceC), new ServiceC());
+	}
+
+	public T GetService<T>()
+	{
+		try
+		{
+			return (T)services[typeof(T)];
+		}
+		catch (KeyNotFoundException)
+		{
+			throw new ApplicationException("The requested service is not registered");
+		}
+	}
+}
+{% endhighlight %}
+
+<p>As you can see,</p>
+<ul>
+<li>the constructor of the class registers all the available services in a dictionary. 
+	In our example, we have 3 different services accessible through <code>IServiceA</code>, 
+	<code>IServiceB</code>, and <code>IServiceC</code>. It is assumed here that <code>ServiceA</code> 
+	implements <code>IServiceA</code> and so forth.</li>
+<li>the generic GetService() method returns a reference the correct implementation 
+	fetching it from the dictionary</li>
+</ul>
+<p>This is how a client would invoke the service:</p>
+
+{% highlight C# %}
+IServiceLocator locator = new ServiceLocator();
+IServiceA myServiceA = locator.GetService<IServiceA>();
+{% endhighlight %}
+
+<p>The clients do not know the actual classes implementing the service. 
+	They only have to interact with the service locator to get to an implementation.</p>
+<h3>Improvements</h3>
+<p>This is as simple as it gets. There are several improvements that a real-world implementation 
+	of a service locator should consider (what follows is only a partial list):</p>
+<ul>
+<li>The service locator itself might be a <a href="http://en.wikipedia.org/wiki/Singleton_pattern">singleton</a>. 
+There usually is no need to have two instances of a service locator.</li>
+<li><a href="/2009/10/13/service-locator-pattern-in-c-with-lazy-initialization/">Lazy initialization</a> 
+of services might be considered. In the example above, the constructor creates new instances 
+for all possible services; initialization might be deferred until some client actually requests 
+a particular service.</li>
+<li>The mapping between interfaces and implementation might be more flexible 
+	using metadata (e.g. through application configuration files)</li>
+</ul>
+<p><em>Next article in the series: <a href="/2009/10/13/service-locator-pattern-in-c-with-lazy-initialization/">Service 
+Locator Pattern in C# with Lazy Initialization</a></em></p>

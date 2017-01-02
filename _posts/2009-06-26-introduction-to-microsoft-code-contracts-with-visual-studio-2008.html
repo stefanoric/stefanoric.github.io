@@ -1,0 +1,126 @@
+---
+layout: post
+title: Introduction to Microsoft Code Contracts with Visual Studio 2008
+date: 2009-06-26 15:16:35.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- ".NET"
+tags:
+- C#
+- design
+- OOP
+- Visual Studio 2008
+meta:
+  _edit_last: '1'
+  ks_metadata: a:7:{s:4:"lang";s:2:"en";s:8:"keywords";s:0:"";s:19:"keywords_autoupdate";s:1:"1";s:11:"description";s:0:"";s:22:"description_autoupdate";s:1:"1";s:5:"title";s:0:"";s:6:"robots";s:12:"index,follow";}
+  dsq_thread_id: '149554550'
+---
+Design by Contract was first introduced by<a href="http://en.wikipedia.org/wiki/Bertrand_Meyer"> 
+Bertrand Meyer</a>, creator of the Eiffel programming language,  in his seminal book <a href="http://www.amazon.co.uk/Object-oriented-Software-Construction-Prentice-Hall-Resource/dp/0136291554/ref=sr_1_1?ie=UTF8&amp;qid=1246018059&amp;sr=8-1" target="_blank">Object-oriented Software Construction</a>. 
+In a nutshell, DBC is based on the following principles:</p>
+<ul>
+<li> <em>preconditions</em>: a method imposes on the client a set of 
+conditions that must be met in order for the method to be invoked successfully (think about parameters validation).</li>
+<li> <em>postconditions</em>: a set of properties are guaranteed by the method 
+immediately after the execution (think about a return value that can only be positive, for example).</li>
+<li> <em>invariants</em>: a set of properties on the class are assumed to hold before 
+the method starts and are guaranteed to hold after the method completes (think about a 
+field of the class that may not be negative, for example).</li>
+</ul>
+<p>A contract formalizes these three things. How can contracts, and <em>defensive programming</em> 
+in general, help us developing better software? Bertrand Meyer explains it in 
+this <a href="http://www.artima.com/intv/contracts.html">interview</a> from 2003:</p>
+<blockquote><p>The main purpose of contracts is to help us build better software by 
+  organizing the communication between software elements through specifying, as 
+  precisely as possible, the mutual obligations and benefits that are involved in 
+  those communications. [...] relying on these  notions—that is to say, making sure when 
+  you write software that don't just write  the implementation, but also write the more 
+  abstract properties underlying the  implementation in the form of contracts—provides 
+  a greatly added software  development experience in several respects. It helps ensure 
+  correctness in the first place,  helps debugging, helps testing, helps ensure inheritance 
+  is properly handled, helps  managers, provides a quite effective form of documentation, and a few others.</p></blockquote>
+<p>Up to now, only a few languages supported DBC natively, and C# was not one of those. 
+  With .NET 4.0 Microsoft fills this gap with 
+  <a href="http://research.microsoft.com/en-us/projects/contracts/">Code Contracts</a>. 
+  It's possible to download Code Contracts for Visual Studio 2008 for the Standard 
+  Edition and the Team System edition.</p>
+<h3>A Basic Example</h3>
+<p>Let's see a basic example of how one can use Contracts in a simple class. (to 
+  try this on your own you need to install Code Contracts from 
+  <a href="http://msdn.microsoft.com/en-us/devlabs/dd491992.aspx">msdn web site</a>). 
+  In this case I have a class with a static method that simply inverts 
+  the content of a string (the choice of the algorithm here is irrelevant).</p>
+  
+{% highlight C# %}
+using System;
+using System.Diagnostics.Contracts;
+namespace TestContracts
+{
+  public class StringInverter
+  {
+    public static string Invert(string s)
+    {
+      // preconditions:
+      Contract.Requires(s != null);
+      // postconditions;
+      Contract.Ensures(Contract.Result<string>().Length == s.Length);
+      char[] reverted = new char[s.Length];
+      int i = 0;
+      foreach (char c in s)
+      {
+        reverted[s.Length - 1 - i ] = c;
+        i++;
+      }
+      
+      return new string(reverted);
+    }
+  }
+}
+{% endhighlight %}
+
+<p>The first thing to notice is that we have added a reference to the <tt>System.Diagnostics.Contracts</tt> namespace. 
+This is where the new library is located. For this to work you have also to 
+add a reference in your project to the Microsoft.Contracts assembly that 
+has come with the Code Contracts installation.</p>
+<p><img class="aligncenter size-full wp-image-137" title="Contracts_VSReferences" 
+src="{{ site.baseurl }}/assets/contracts_vsreferences.jpg" alt="Contracts_VSReferences" width="225" height="207" /></p>
+<p>The first method that we invoke on Contracts is a <em>precondition</em> that 
+specifies that this method cannot accept an input string which is null (it would 
+accept an empty string though). The second method is a <em>postcondition</em> asserting that this method guarantees that the string returned by this method will have the same size as the input string.</p>
+<p>Obviously you are free to add more preconditions and/or postconditions if your 
+  domain logic requires so. But what exactly happens at run-time if either a precontion 
+  or a postcondition is not met? The answer is: it depends. After installing Code Contracts, 
+  project properties displays a new tab at the bottom named "Code Contracts" where you 
+  can tweak the contracts behavior for each of the build configurations that you 
+  have defined (Debug, Release, etc...).</p>
+<p><img class="aligncenter size-medium" title="Contracts Project Properties" src="{{ site.baseurl }}/assets/code-contracts.jpg" alt="Contracts Project Properties"/></p>
+<p>Let's concentrate on Runtime Checking for now: after you have checked it, you can decide 
+  which kind of contracts to enable; you should refer to official documentation for a 
+  complete explanation of all the options. For now, let's just pick "Full" and check "Assert on contract failures". With this choice, pre and postconditions will be tested at runtime and if any of them is not 
+  met a dialog will be shown detailing the failing condition.</p>
+<p><img class="aligncenter size-medium" title="Contracts_ProjectsProperties_2" src="{{ site.baseurl }}/assets/code-contracts-detail.jpg" alt="Contracts_ProjectsProperties_2"/></p>
+<p>So, let's try calling the <tt>Invert</tt> method with a null string and let's see 
+what happens. Add the following code to the class above, compile and run.</p>
+
+{% highlight C# %}
+public static void Main()
+{
+  Console.WriteLine(Invert(null));
+}
+{% endhighlight %}
+
+<p>This is what you should see:<br />
+<img class="aligncenter size-medium" title="ContractsAssertFailedPrecondition" src="{{ site.baseurl }}/assets/code-contracts-precondition-failed.jpg" alt="ContractsAssertFailedPrecondition"/></p>
+<p>As you can see, this looks exactly like using <tt>Debug.Assert</tt> calls from <tt>System.Diagnostics</tt> 
+(many of us, myself included, used debug asserts in place of preconditions). 
+In reality, contracts are much more powerful since</p>
+<ul>
+<li>you can not just enforce preconditions but also guarantee postconditions and other class invariants</li>
+<li>contracts knows about class hierarchies: you can define contracts on interfaces and base classes 
+  and they will be inherited from derived classes</li>
+<li>it's possible to analyse compliance to contracts in a static way, even without running the code!</li>
+</ul>
+<p>We'll discuss about all this in the next post. Stay tuned!</p>
+<p><i>Next post in the series: <a href="/2009/07/01/code-contracts-invariants/">Code Contracts: Invariants</a></i>.</p>

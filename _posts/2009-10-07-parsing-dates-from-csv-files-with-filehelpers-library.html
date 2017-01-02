@@ -1,0 +1,116 @@
+---
+layout: post
+title: Parsing Dates from CSV files with FileHelpers Library
+date: 2009-10-07 22:08:37.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- ".NET"
+tags:
+- C#
+- Libraries
+- tips
+meta:
+  _edit_last: '1'
+  _wpas_skip_twitter: '1'
+  dsq_thread_id: '149636899'
+---
+<p>In my current project I have found myself needing to parse a CSV file coming from a legacy C++ application. 
+    This is a fairly common task, and in the past I have always written the parsing engine myself, 
+    especially when there was some validation related to the business logic involved.</p>
+<p>This time I have chosen to try the reportedly excellent <a href="http://www.filehelpers.com/">FileHelpers</a> library.
+Why reinvent the wheel yet another time? The library is well documented and in a matter of
+ minutes I was able to start experimenting with some test data.</p>
+<p>To simplify the discussion, suppose that the CSV file has the following structure:</p>
+
+<pre>
+# City, Date, Temperature
+Chicago; 20090913 07:00:00; 62.23
+New York; 20090913 08:00:00; 81.3
+</pre>
+
+<p>Each row of the CSV file is mapped to the following class:</p>
+
+{% highlight C# %}
+[DelimitedRecord(";")]
+[IgnoreEmptyLines()]
+[ConditionalRecord(RecordCondition.ExcludeIfBegins, "#")]
+public class CsvRecord
+{
+    public string City;
+
+    [FieldConverter(ConverterKind.Date, "yyyyMMdd HH:mm:ss")]
+    public DateTime Date;
+
+    [FieldConverter(ConverterKind.Double, ".")]
+    public double Temperature;
+}
+{% endhighlight%}
+
+<p>The attributes are pretty self-explanatory: they specify which is the separator 
+    value and which lines can be ignored.</p>
+<p>The interesting part here is the way FileHelpers allows to specify a pattern to 
+    convert a string into a <code>DateTime</code> value. In this case, the pattern used
+     here is <code>yyyyMMdd HH:mm:ss</code> to match the CSV file.</p>
+<p>Once the mapping between the CSV and the .NET object is setup, I have
+     created a class wrapping the FileHelpers engine (just in case some day I want to 
+     change the parsing engine), with the following (simplified) method:</p>
+     
+{% highlight C# %}
+public IEnumerable<CsvRecord> GetRecordsFromFile(Stream s)
+{
+   FileHelperEngine engine = new FileHelperEngine(typeof(CsvRecord));
+   s.Seek(0, SeekOrigin.Begin);
+
+   CsvRecord[] records = engine.ReadStream(new StreamReader(s)) as CsvRecord[];
+   return records;
+}
+{% endhighlight%}
+
+<p>This was working like a charm... until I moved the code to a separate test machine. 
+    All of a sudden the parser would complain that it could not parse 
+    the dates from the file. After a lot of thought, I realized that the test 
+    machine had a different regional settings: while my machine had English formats, 
+    the test machine had Italian formats. And for some reason FileHelpers was not able 
+    to work correctly in this scenario (even though I had explicitly specified the date 
+    and time pattern in the <code>CsvRecord</code> class).</p>
+<p>Luckily, FileHelpers lets you specify your own converters if the predefined ones won't do.
+    I therefore created my custom converter for the dates as follows:</p>
+    
+{% highlight C# %}
+public class CustomDateTimeConverter : ConverterBase
+{
+    private const string DateTimeFormat = "yyyyMMdd HH:mm:ss";
+
+    public override object StringToField(string from)
+    {
+        return DateTime.ParseExact(from, DateTimeFormat, CultureInfo.InvariantCulture);
+    }
+}
+{% endhighlight%}
+
+<p>and rewritten the <code>CsvRecord</code> class as follows:</p>
+
+{% highlight C# %}
+[DelimitedRecord(";")]
+[IgnoreEmptyLines()]
+[ConditionalRecord(RecordCondition.ExcludeIfBegins, "#")]
+public class CsvRecord
+{
+    public string City;
+
+    [FieldConverter(typeof(CustomDateTimeConverter))]
+    public DateTime Date;
+
+    [FieldConverter(ConverterKind.Double, ".")]
+    public double Temperature;
+}
+{% endhighlight%}
+
+<p>This time it worked also with Italian locale.</p>
+<p>Frankly, I don't know why the FileHelpers class had problems with the 
+    Italian locale (possibly with locales different from English ones). 
+    Probably having a look at the source code would reveal the truth.</p>
+<p>I suspect that it is parsing the dates with a given format but without 
+    specifying an invariant culture format provider. But that is just a wild guess.</p>

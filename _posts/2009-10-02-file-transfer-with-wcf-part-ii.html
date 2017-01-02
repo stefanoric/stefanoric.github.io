@@ -1,0 +1,93 @@
+---
+layout: post
+title: 'File Transfer with WCF: Part II'
+date: 2009-10-02 14:23:22.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- WCF
+tags:
+- C#
+- SOA
+- WCF
+meta:
+  _edit_last: '1'
+  _wpas_skip_twitter: '1'
+  ks_metadata: a:7:{s:4:"lang";s:2:"en";s:8:"keywords";s:58:"new,request,wcf,post,serverfilename,string,basepath,buffer";s:19:"keywords_autoupdate";s:1:"1";s:11:"description";s:158:"new
+    FileStream(serverFileName, FileMode.Open); return new FileDownloadReturnMessage(new
+    FileMetaData(localFileName, serverFileName), fs); } catch (IOException";s:22:"description_autoupdate";s:1:"1";s:5:"title";s:0:"";s:6:"robots";s:12:"index,follow";}
+  dsq_thread_id: '149554630'
+---
+<p><em>This is the second post on a small series about transferring large files with WCF using streaming</em> :</p>
+<ul>
+<li><a href="/2009/08/28/file-transfer-with-wcp/">File Transfer With WCF</a></li>
+<li><a href="/2009/10/02/file-transfer-with-wcf-part-ii/">File Transfer With WCF: Part II</a></li>
+<li><a href="/2010/09/02/file-transfer-with-wcf-part-iii/">File Transfer With WCF: Part III</a></li>
+</ul>
+<p>A few readers of my previous post on <a href="/2009/08/28/file-transfer-with-wcp/">File Transfer with WCF</a> 
+have asked to share the implementation of the UploadFile and DownloadFile methods.</p>
+<p>While I can't share the complete implemention of the service for obvious Intellectual Property reasons, 
+    I will outline the basic steps involved in implementing the service.
+     Please refer to my previous <a href="/2009/08/28/file-transfer-with-wcp/">post</a> for 
+     the details on the DataContracts and OperationContracts involved here.</p>
+<p><em>NOTE</em>: I have extracted these portions from the actual code. 
+I cannot verify this to work as-is, but it should give you a head-start to 
+complete your own service. You should also add your own error checking, and any pre or 
+post-download and/or pre or post-upload processing as required by the business.</p>
+
+<h3>Download</h3>
+
+{% highlight C# %}
+public FileDownloadReturnMessage DownloadFile(FileDownloadMessage request)
+{
+    // parameters validation omitted for clarity
+    string localFileName = request.MetaData.LocalFileName;
+
+    try
+    {
+        string basePath = ConfigurationSettings.AppSettings["FileTransferPath"];
+        string serverFileName = Path.Combine(basePath, request.MetaData.RemoteFileName);
+
+        Stream fs = new FileStream(serverFileName, FileMode.Open);
+
+        return new FileDownloadReturnMessage(new FileMetaData(localFileName, serverFileName), fs);
+    }
+    catch (IOException e)
+    {
+        throw new FaultException<IOException>(e);
+    }
+}
+{% endhighlight %}
+
+<h3>Upload</h3>
+
+{% highlight C# %}
+public void UploadFile(FileUploadMessage request)
+{
+    // parameters validation omitted for clarity
+    try
+    {
+        string basePath = ConfigurationSettings.AppSettings["FileTransferPath"];
+        string serverFileName = Path.Combine(basePath, request.MetaData.RemoteFileName);
+
+        using (FileStream outfile = new FileStream(serverFileName, FileMode.Create))
+        {
+            const int bufferSize = 65536; // 64K
+
+            Byte[] buffer = new Byte[bufferSize];
+            int bytesRead = request.FileByteStream.Read(buffer, 0, bufferSize);
+
+            while (bytesRead > 0)
+            {
+                outfile.Write(buffer, 0, bytesRead);
+                bytesRead = request.FileByteStream.Read(buffer, 0, bufferSize);
+            }
+        }
+    }
+    catch (IOException e)
+    {
+        throw new FaultException<IOException>(e);
+    }
+}
+{% endhighlight %}

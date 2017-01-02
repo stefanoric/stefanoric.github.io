@@ -1,0 +1,136 @@
+---
+layout: post
+title: Why Functional Programming Matters in F#
+date: 2011-07-16 19:46:12.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- F#
+tags:
+- F#
+- functional
+meta:
+  dsq_thread_id: '362757562'
+  _edit_last: '1'
+  _aioseop_title: Why Functional Programming Matters in F#
+  _aioseop_description: Why Functional Programming Matters in F#
+  _aioseop_keywords: f#, F#, functional programming
+  wpsd_autopost: '1'
+---
+<p><title>Building Reduce and Map from the Ground Up with F#</title></p>
+<p>Today I've found myself reading again the excellent paper 
+  <a href="/blog/wp-content/uploads/2011/07/WhyFunctionalProgrammingMatters.pdf">Why Functional Programming 
+  Matters</a>, where the author describes the core activity of programming in a functional fashion in terms 
+  of &quot;glueing functions together&quot;.</p>
+<p>It's been a while since I last played around with F#. So I decided this would be a good time 
+  to refresh some of the core concepts by translating some of the examples from his paper into F#.</p>
+<h2>Reduce</h2>
+<p>The paper starts off describing how a <code>reduce</code> function could be devised, 
+extrapolating a common behavior from a certain set of functions. Let's first consider a function 
+to sum all the items in a list:</p>
+
+{% highlight F# %}
+let add a b = a + b
+  
+let rec sum l =
+    match l with
+    | [] -> 0
+    | h::t -> add h (sum t)
+{% endhighlight %}
+<p>Nothing too fancy going on here. Let's now consider a similar function that 
+  instead multiplies together all the items in a list:</p>
+
+{% highlight F# %}
+let mul a b = a * b 
+    let rec product l =
+        match l with
+        | [] -> 1
+        | h::t -> mul h (product t)
+
+{% endhighlight %}
+
+<p>If you compare the structure of the two functions <code>sum</code> and <code>product</code> 
+you can see that the two are very similar. The are only two differences between the two:</p>
+<ul>
+<li>The value being returned when an empty list is matched (0 vs 1).</li>
+<li>The function being applied between the head of the list and the application 
+  of the recursive function to the remaining of the list (<code>add</code> vs <code>mul</code>)</li>
+</ul>
+<p>It's easy, then, to extrapolate a more general <code>reduce</code> function, as follows:</p>
+
+{% highlight F# %}
+let rec reduce f a l =
+        match l with 
+        | [] -> a
+        | h::t -> f h ((reduce f a) t)
+{% endhighlight %}
+
+<p>Let's consider all the pieces step by step:</p>
+<ul>
+<li><code>reduce</code> is a (recursive) function accepting a function <code>f</code>, a value <code>a</code> and a list <code>l</code>.</li>
+<li><code>f</code> is the function that we want to apply between two elements of the list (<code>sum</code> or <code>mul</code> in the two examples above)</li>
+<li><code>a</code> is the value that we want to return when <code>f</code> is applied to the empty list (0 or 1 respectively), and</li>
+<li><code>l</code> is the actual list we want to operate on.</li>
+</ul>
+<p>Let's try this new function in the interactive window:</p>
+
+{% highlight F# %}
+> reduce;;
+val it : (('a -> 'b -> 'b) -> 'b -> 'a list -> 'b)
+> reduce add 0 [1;2;3];;
+val it : int = 6
+> reduce mul 1 [1;2;3];;
+val it : int = 6
+{% endhighlight %}
+
+<p>As you see, the compiler infers the types involved in <code>reduce</code> as follows:</p>
+<ul>
+<li><code>('a -> 'b -> 'b)</code> is the description of f: a function that takes two arguments of type 'a and 'b and 
+returns one item of type 'b (note that 'a and 'b may in some cases represent the same type, as with <code>add</code> 
+and <code>mul</code>).</li>
+<li><code>'b</code> is a parameter of the same type as the one returned by <code>f</code>.</li>
+<li><code>'a list</code>is a list of items the same type as the first argument of <code>f</code>.</li>
+<li><code>'b</code> is finally the return type of the whole reduction process</li>
+<p>	.</ul>
+<p>There's an interesting special case: when <code>'b</code> is <code>'a list</code>. 
+That is, when <code>f</code> has the following form: ('a -> a' list -> a' list). 
+A function receiving an item and a list and returning another list. Can you think of any function like that? 
+What about concatenating an item and a list?</p>
+
+{% highlight F# %}
+let cons a l = a::l
+{% endhighlight %}
+
+<p>Let's see how the F# interactive interprets the new function we've just created and an example of usage:</p>
+
+{% highlight F# %}
+> cons;;
+val it : ('a -> 'a list -> 'a list)
+> cons 1 [2; 3];;
+val it : int list = [1; 2; 3]
+>
+{% endhighlight %}
+
+<p>And we now consider <code>cons</code> as our <code>f</code> function, 
+first parameter of the <code>reduce</code>, we can write for example:</p>
+
+{% highlight F# %}
+let append a b = reduce cons b a
+    let copy l = reduce cons l [] 
+{% endhighlight %}
+
+<p>where <code>append</code> concatenates two lists and <code>copy</code> 
+simply replicates any given list:</p>
+
+{% highlight F# %}
+> append;;
+val it : ('a list -> 'a list -> 'a list)
+> append [1;2] [3;4];;
+val it : int list = [1; 2; 3; 4]
+>  copy;;
+val it : ('a list -> 'a list)
+> copy [1;2;3];;
+val it : int list = [1; 2; 3]
+>   	  
+{% endhighlight %}

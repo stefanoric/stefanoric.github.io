@@ -1,0 +1,104 @@
+---
+layout: post
+title: A Singleton Service Locator Pattern
+date: 2009-10-29 15:40:47.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- ".NET"
+- C#
+- Design and Patterns
+tags:
+- C#
+- Design and Patterns
+- OOP
+meta:
+  _edit_last: '1'
+  _wpas_skip_twitter: '1'
+  ks_metadata: a:7:{s:4:"lang";s:2:"en";s:8:"keywords";s:58:"type,service,instance,singleton,locator,new,private,object";s:19:"keywords_autoupdate";s:1:"1";s:11:"description";s:153:"Type,
+    Type servicesType; // a map containing references to concrete implementation already
+    instantiated // (the service locator uses lazy instantiation).";s:22:"description_autoupdate";s:1:"1";s:5:"title";s:0:"";s:6:"robots";s:12:"index,follow";}
+  dsq_thread_id: '149554644'
+---
+<p>This is the third post of a series on the Service Locator pattern. In the <a href="/2009/09/25/service-locator-pattern-in-csharpa-simple-example/">first post</a> I described how to create a basic service locator for your C# application, while in the <a href="/2009/10/13/service-locator-pattern-in-c-with-lazy-initialization/">second post</a> I introduced lazy initialization of the services.</p>
+<p>We now add another piece to our puzzle, transforming the Service Locator class into a <a href="http://en.wikipedia.org/wiki/Singleton_pattern">singleton</a>.</p>
+<h1>The Singleton Pattern</h1>
+<p>The singleton is arguably the most known and controversial design pattern. Some say <a href="http://c2.com/cgi/wiki?SingletonsAreGood">singletons are good</a>, some says <a href="http://c2.com/cgi/wiki?SingletonsAreEvil">singletons are evil</a>. Eric Gamma himself (one of the <a href="http://c2.com/cgi/wiki?GangOfFour">Gang Of Four</a>) in a recent <a href="http://www.informit.com/articles/article.aspx?p=1404056">interview</a> stated that (emphasis added):</p>
+<blockquote><p>When discussing which patterns to drop, we found that we still love them all. (Not really—<strong>I'm in favor of dropping Singleton. Its use is almost always a design smell.</strong>)</p></blockquote>
+<p>I don't have a strong opinion either way; I tend to use it sparingly and in the following code I will show how to apply this pattern to the service locator. There are already countless blogs discussing the pros and the cons of the singleton pattern, therefore I won't discuss about it any further.</p>
+<h1>The Singleton Service Locator</h1>
+<p>The following was our initial implementation (other details of the classes have been removed for clarity). The constructor was <em>internal</em>, allowing all potential clients from within the assembly to invoke it. Clients could either pass around a reference to the created service locator, or instantiate new instances each time:</p>
+
+{% highlight C# %}
+internal class ServiceLocator : IServiceLocator
+{
+    // a map between contracts -> concrete implementation classes
+    private IDictionary<Type, Type> servicesType;
+
+    // a map containing references to concrete implementation already instantiated
+    // (the service locator uses lazy instantiation).
+    private IDictionary<Type, object> instantiatedServices;
+
+    internal ServiceLocator()
+    {
+        this.servicesType = new Dictionary<Type, Type>();
+        this.instantiatedServices = new Dictionary<Type, object>();
+
+        this.BuildServiceTypesMap();
+    }
+
+    // rest of the methods
+ }
+{% endhighlight %}
+
+<p>To implement the singleton pattern, we make the constructor <em>private</em> and provide clients with a static method through which we can retrieve an instance of the service.</p>
+<p>Note how the creation of the single instance of the ServiceLocator class is itself lazy and thread safe. There are a few variations on the theme when it comes to singleton thread safe initialization (see for example <a href="http://www.yoda.arachsys.com/csharp/singleton.html">this post</a> by Jon Skeet).</p>
+
+{% highlight C# %}
+internal class ServiceLocator : IServiceLocator
+{
+        // a map between contracts -> concrete implementation classes
+        private IDictionary<Type, Type> servicesType;
+        private static readonly object TheLock = new Object();
+
+        private static IServiceLocator instance;
+
+        // a map containing references to concrete implementation already instantiated
+        // (the service locator uses lazy instantiation).
+        private readonly IDictionary<Type, object> instantiatedServices;
+
+        private ServiceLocator()
+        {
+            this.servicesType = new Dictionary<Type, Type>();
+            this.instantiatedServices = new Dictionary<Type, object>();
+
+            this.BuildServiceTypesMap();
+        }
+
+        public static IServiceLocator Instance
+        {
+            get
+            {
+                lock (TheLock) // thread safety
+                {
+                    if (instance == null)
+                    {
+                        instance = new ServiceLocator();
+                    }
+                }
+
+                return instance;
+            }
+        }
+
+        // rest of the methods
+ }
+{% endhighlight %}
+
+<p>Clients will now simply invoke the <code>GetService()</code> method through the singleton instance, without having to create a new object each time:</p>
+
+{% highlight C# %}
+IServiceA service = 
+    ServiceLocator.Instance.GetService<IUniverseFileServiceAdapter>();
+{% endhighlight %}

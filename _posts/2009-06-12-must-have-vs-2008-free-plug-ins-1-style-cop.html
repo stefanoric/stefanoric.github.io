@@ -1,0 +1,79 @@
+---
+layout: post
+title: 'Must have VS 2008 Free Plug-ins (1): Style Cop'
+date: 2009-06-12 22:59:36.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Tools
+tags:
+- C#
+- Coding Standards
+- MSBuild
+- Plugin
+- StyleCop
+- Tools
+- Visual Studio 2008
+meta:
+  _edit_last: '7468053'
+  dsq_thread_id: '149554541'
+---
+<p>Coding standards is one of those topics which can easily create endless discussions 
+  between developers (Steve McConnell prefers the term <em>religious wars</em> in his 
+  famous book Code Complete). Everybody seems to have his/her own preferences and pet 
+  peeves when it comes to the lay out of statements and naming of types and variables 
+  (not to mention the eternal “<a href="http://www.codinghorror.com/blog/archives/001254.html">tab 
+  vs spaces</a>” argument).</p>
+  
+<p>All the programming languages that I have worked with have their own guidelines 
+  when it comes to coding standards. Or have they? The C language, father of C++, 
+  C# and Java languages, has its own share of style variations: Emacs supports half a 
+  dozen C coding styles (K&amp;R, BDS, Linux, etc…), and at least a couple C++ modes (Ellemtel, Stroustrup).</p>
+  
+<p>While the Java community can refer to a common <a href="http://java.sun.com/docs/codeconv/">standard</a>, this doesn’t seem to be the case for C# developers. The <a href="http://www.tiobe.com/standards/gemrcsharpcs.pdf">guidelines from Philips</a> (pdf) are the ones which one is most often redirected to, but one can hardly call them “official”; Microsoft has also something on the MSDN 
+on <a href="http://msdn.microsoft.com/en-us/library/xzf533w0(VS.71).aspx">naming 
+conventions</a>, but there doesn’t seem to be anything related to code layout (spacing, indentation, etc…).</p>
+<p>Whatever the choice, though, only a few would argue that choosing one standard 
+  for the team and sticking to it is not of outmost importance to improve readability 
+  and ease maintenance for years to come.</p>
+<h4>Microsoft Style Cop</h4>
+
+<p>Enters Style Cop. <a href="http://code.msdn.microsoft.com/Release/ProjectReleases.aspx?ProjectName=sourceanalysis&amp;ReleaseId=1425">Style Cop</a> (not to be confused with <a href="http://blogs.msdn.com/fxcop/">Fx Cop</a>) is a free Visual Studio plug-in which is released by Microsoft itself. It can be run on a single file or entire project or solutions and reports all the variations to its predefined set of rules for naming conventions, documentation and code layout. To run it on the current file, just right click on the editor and select the corresponding menu item:</p>
+<p>
+<img style="display:inline;border-width:0;" title="StyleCop1" src="{{ site.baseurl }}/assets/stylecop1.png" border="0" 
+alt="StyleCop1" width="468" height="303" /></p>
+<p>This is the output that I got running the tool on the code above:</p>
+<p>
+<img style="display:inline;border-width:0;" title="image" src="{{ site.baseurl }}/assets/stylecop2.jpg" border="0" 
+alt="image" width="478" height="261" /></p>
+
+<p>If you need additional information about how to fix a particular violation, you can right click on a StyleCop warning, 
+  select <em>Show Error Help</em> and dig in:</p>
+<p>
+<img style="display:inline;border-width:0;" title="image" src="{{ site.baseurl }}/assets/stylecop0.png" border="0" 
+alt="image" width="455" height="484" /></p>
+<p>Default settings can be customized to some extent. To do so, right click on a Project from the Solution 
+  Explorer to invoke the settings editor:</p>
+<p>
+<img style="display:inline;border-width:0;" title="image" src="{{ site.baseurl }}/assets/stylecop3.jpg" border="0" 
+alt="image" width="335" height="303" /></p>
+<p>From the Rules tab you can relax some of the rules or extend or restrict the scope according to the 
+  visibility (private/internal/protected/public).</p>
+<p>
+<img style="display:inline;border-width:0;" title="image" src="{{ site.baseurl }}/assets/stylecop4.png" 
+border="0" alt="image" width="454" height="362" /></p>
+
+<p>Yes, you can remove the restriction on the Tabs if you want (but you don’t… do you?). You can even 
+  support Hungarian Notation if you wish so (God forbids…!!!).</p>
+<p>Default settings are applied at a project level and saved in a file named <
+em>Settings.SourceAnalysis</em>; It might easily become tedious to repeat the same settings 
+over and over (my Visual Studio solutions have typically at least 4 or 5 different projects, 
+and not counting unit tests); luckily the settings are automatically applied to all projects 
+located in the subdirectories of the directory where the file is. Therefore, it usually suffices
+ to move the file in the solution directory; individual projects can ovverride the general 
+ settings by providing their own Setting.SourceAnalysis file if needed (I usually do that 
+ for the tests projects where I usually omit XML documentation for test fixtures).</p>
+<p>On a final note, if you use MSBuild for integration then you can invoke StyleCop every 
+  time the solution is built. If you are interested, you can find all the details 
+  in this MSDN <a href="http://blogs.msdn.com/sourceanalysis/pages/source-analysis-msbuild-integration.aspx">page</a>.<br />

@@ -1,0 +1,131 @@
+---
+layout: post
+title: Comparing Floating Point Numbers
+date: 2010-03-02 14:29:00.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- ".NET"
+- C#
+tags:
+- algorithm
+- C#
+- tips
+meta:
+  _wpas_mess: 'Comparing Floating Point Numbers: http://wp.me/puaLG-d1'
+  _edit_last: '1'
+  _wpas_skip_twitter: '1'
+  email_notification: '1267537410'
+  dsq_thread_id: '149554673'
+---
+<h2>Floating Points and Rounding Errors.</h2>
+<p>Working with floating points number can sometimes provide some (un)pleasant surprise, 
+    since many real numbers do not have a finite representation and this can lead to rounding errors. </p>
+<p>If you need to refresh your knowledge (and have some time to spare), 
+    you can find a great treatment in the article <a href="http://docs.sun.com/source/806-3568/ncg_goldberg.html">What 
+    Every Computer Scientist Should Know About Floating-Point Arithmetic</a>:</p>
+<blockquote><p>
+Squeezing infinitely many real numbers into a finite number of bits requires an approximate representation. 
+Although there are infinitely many integers, in most programs the result of integer computations can 
+be stored in 32 bits. In contrast, given any fixed number of bits, most calculations with 
+real numbers will produce quantities that cannot be exactly represented using that many bits. 
+Therefore the result of a floating-point calculation must often be rounded in order to fit b
+ack into its finite representation. This rounding error is the characteristic feature of 
+floating-point computation.
+</p></blockquote>
+<p>A small example should make the problem clearly visible:</p>
+
+{% highlight C# %}
+class Program
+{
+    static void Main(string[] args)
+    {
+        double a = 22.4;
+        double b = a / 131;
+
+        double c = 0;
+        for (int i = 0; i < 131; i++)
+        {
+            c += b;
+        }
+
+        Console.WriteLine("Are they equal?: {0}", a == c);
+        Console.WriteLine("Difference (a - c) is {0} ", a - c);
+    }
+}
+{% endhighlight %}
+
+<p>Here we are taking a double (a), diving it by 131 and then creating a 
+    new number (c) by adding the result of that division 131 times. By pure math, a and c should be equal. 
+    If you try this small program yourself, this is the output that you would get:</p>
+<pre>
+Are they equal?: False
+Difference (a - c) is -4,9737991503207E-14
+</pre>
+<p>As you can see, the result is not what you might expect, and it's affected by a 
+    rounding error that is building up every time b is added to the partial result c.</p>
+<p>Note that this is dependent on the number that I have chosen. 
+    If you substitute 131 with 5, you will not experience this problem.</p>
+<h2>Your Own Comparer</h2>
+<p>Sometimes this behavior might annoy you, especially when you don't need such 
+    a high precision and a “rough” equality is all you need. A typical situation is unit 
+    testing an algorithm against some expected result: your assertions may fail 
+    because of a rounding error, even though the logic of your algorithm is formally correct.</p>
+<p>In such a case, you might want to implement your own comparer. 
+    A desirable property for such a comparer is a threshold value: if the difference between two floating 
+    points is <em>below</em> that threshold they are considered equal.</p>
+<p>All you need is to implement the .NET interface 
+    <code><a href="http://msdn.microsoft.com/en-us/library/ms132151.aspx">IEqualityComparer</a></code><a href="http://msdn.microsoft.com/en-us/library/ms132151.aspx"> </a>interface.</p>
+
+{% highlight C# %}
+class DoubleComparer : IEqualityComparer
+{
+    private readonly double threshold;
+
+    public DoubleComparer(double threshold)
+    {
+        this.threshold = threshold;
+    }
+
+    public bool Equals(double x, double y)
+    {
+        return Math.Abs(x - y) < this.threshold;
+    }
+
+    public int GetHashCode(double obj)
+    {
+       return obj.GetHashCode();
+    }
+}
+{% endhighlight %}
+
+<p>I have created my own comparer to use in my unit tests. I only have to implement 
+    2 methods: <code>Equals()</code> and <code>GetHashCode()</code>.</p>
+<p>I don't care much for the actual algorithm of the hashcode implementation, 
+    so I am reusing <code>double</code> own algorithm.</p>
+<p>Instead, I have applied my own logic to the Equals method: to me, two doubles 
+    are equal if the absolute value of their difference is within a given threshold (which I can pass to the 
+    comparer in the constructor).</p>
+<h2>The Comparer In Use</h2>
+<p>Suppose I have an algorithm to calculate the histogram of a given collection 
+    of doubles, and a unit test to validate the calculation against a collection of expected results.</p>
+<p>In the example below, <em>samples</em> are the input values which I want 
+to create the histogram for, and <em>expectedBreaks</em> is a sequence containing the left and right 
+limits of the bins of the histogram (in the example I am requiring 5 bins, so the number of breaks is 5 + 1 = 6).</p>
+
+{% highlight C# %}
+var p = new HistogramProvider();
+double[] samples = { 20, 12, 4, 22, 19, 24, 9, 5, -12.2, 13, 0 };
+double[] expectedBreaks = { -12.2, -4.96, 2.28, 9.52, 16.76, 24 };
+
+var histogram = p.CreateHistogram(samples, 5);
+
+Assert.IsTrue(expectedBreaks.SequenceEqual<double>(
+                       histogram.Breaks, 
+                       new DoubleComparer(0.01)));
+{% endhighlight %}
+
+<p>I have figured out the threshold to pass (0.01) based on the relative size of the doubles under analysis. 
+    Of course, you should use your own judgement to come up with a sensible threshold according 
+    of the range of your input data.</p>

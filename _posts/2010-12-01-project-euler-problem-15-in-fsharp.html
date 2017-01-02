@@ -1,0 +1,104 @@
+---
+layout: post
+title: Project Euler Problem 15 in F#
+date: 2010-12-01 16:43:58.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- ".NET"
+- F#
+tags:
+- F#
+- functional
+meta:
+  _edit_last: '1'
+  dsq_thread_id: '183005640'
+  _aioseop_keywords: f#,fsharp,euler, pascal's triangle, tartaglia, algorithm, binomial
+    coefficients, dynamic programming
+  _aioseop_description: A solution to Project Euler problem 15 in F#
+  _aioseop_title: Project Euler Problem 15 in F#
+---
+<p>With <a href="http://projecteuler.net/index.php?section=problems&amp;id=15">Project Euler Problem 15</a> 
+we approach the fascinating world of graphs (but, as we shall see, only in a very tangential fashion):</p>
+<blockquote>
+<p>Starting in the top left corner of a 2x2 grid, there are 6 routes (without backtracking) to the bottom right corner.</p>
+<p><img alt="alt" src="{{ site.baseurl }}/assets/p_015.gif" style="display: block; float: none; margin-left: auto; margin-right: auto" /></p>
+<p>How many routes are there through a 20x20 grid?</p>
+</blockquote>
+
+<h2>Analysis</h2>
+<p>With pen and paper the fact that a 2x2 grid has 6 possible routes can be easily confirmed. 
+  However, as soon as the grid size grows, it's simply not practical to start drawing all the possible ways to reach the lowest 
+  right corner from the top left one.</p>
+<p>In order to find a general solution, it helps trying a <a href="http://en.wikipedia.org/wiki/Dynamic_programming">dynamic 
+programming</a> approach: we first try to solve a smaller problem and then combine the solutions of more sub-problems to find the overall answer.</p>
+<p>The smallest problem that we can consider is the number of possible routes in a 1x1 grid. What could be simpler? 
+  Considering all the three possible starting corners of such a grid we can see that:</p>
+<ul>
+<li>From both the bottom-left and the top-right corner there's only one possible route to the destination.</li>
+<li>From the top-left corner there are trivially two possible routes.</li>
+</ul>
+<p>In the picture below, I have marked for each corners the number of possible routes to the destination for the 1x1 grid:</p>
+<p>&nbsp;<img alt="PascalGrid_2x2" border="0" height="222" src="{{ site.baseurl }}/assets/PascalGrid_2x2.png" 
+style="border-right-width: 0px; margin: 10px 0px; display: inline; float: ; border-top-width: 0px; border-bottom-width: 0px; border-left-width: 0px" 
+title="PascalGrid_2x2" width="180" /></p>
+<p>We can now consider the bigger 2x2 grid enclosing the smaller 1x1 grid representing the sub-problem we solved earlier:</p>
+<ul>
+<li>Both points on the outer sides of the grid have only one possible route to the destination. In fact, from there you can 
+  only proceed along the edge. So, we mark both of these points with 1.</li>
+<li>Let's now consider the point immediately above the bottom left one on the grid: 
+  from this point we can either move down (to the point that we just marked with a 1 
+  or right to the point of the 1x1 grid that we had marked with a 2 previously. 
+  Hence, from this point we have 1 possible route if we decide to go down <em>or</em> 2 
+  possible routes if we decide to go right: that makes 3 possible routes that can lead from this point to the destination.</li>
+</ul>
+<p>We can generalize and deduce that <em>for each point in the grid, the number of possible routes to the destination is 
+  equal to the sum of the routes available from the point immediately down and the point immediately right</em> 
+  (points on the outer edge having only 1 possible route). This is the key to solve this problem for any kind of grid.</p>
+<p>So, we have informally demonstrated the result for the 2x2 grid:</p>
+<p><img alt="PascalGrid_4x4" border="0" height="297" src="{{ site.baseurl }}/assets/PascalGrid_4x4.png" style="border-right-width: 0px; margin: 10px 0px; display: inline; float: ; border-top-width: 0px; border-bottom-width: 0px; border-left-width: 0px" title="PascalGrid_4x4" width="274" /></p>
+<p>And similarly we can resolve the problem for a 3x3 grid:<a href="http://stefanoricciardi.com/blog/wp-content/uploads/2010/12/PascalGrid.png"><img alt="PascalGrid" border="0" height="412" src="{{ site.baseurl }}/assets/PascalGrid_thumb.png" style="border-right-width: 0px; margin: 10px 0px; display: inline; border-top-width: 0px; border-bottom-width: 0px; border-left-width: 0px" title="PascalGrid" width="388" /></a></p>
+<p>Now, if you look closely at the patterns of the possible routes for each point in the grid, you may recognize what 
+  in Italy we call <em>Il triangolo di Tartaglia (Tartaglia's Triangle)</em>, which everywhere else in the world is 
+  most probably known as Pascal's Triangle:</p>
+<p><img alt="PascalTriangle" border="0" height="135" src="{{ site.baseurl }}/assets/PascalTriangle.png" 
+style="border-right-width: 0px; display: inline; border-top-width: 0px; border-bottom-width: 0px; border-left-width: 0px" title="PascalTriangle" width="236" /></p>
+<p>(note that the triangle obviously continues <em>ad infinitum</em>).</p>
+<p>The solution for a square grid of any size lies in the vertical diagonal (if you excuse the quasi-oxymoron), that is 1, 2, 6, 20, etc... 
+  If we start counting rows from the top, first row being row 0, second row being row 1 and so on, 
+  and columns from the left also starting from 0, we can see that for a square grid of size <em>n</em>, 
+  the number of routes is given by the item in the&nbsp;<em>n</em> column within the 2*<em>n </em>row.</p>
+<p>Now, it would be trivial, if somehow boring, to solve the problem for a 20x20 grid using a spreadsheet. 
+  All you have to do is to create the 20 x 2 = 40 rows of the Pascal triangle (
+  with some copy and paste of the right formula for each cell), and pick the 20<sup>th</sup> element from that road.</p>
+<p>However, you don't actually have to create the whole triangle: the values of each row can be calculated using they 
+  <a href="http://en.wikipedia.org/wiki/Binomial_coefficient">binomial expansion</a>: for a given row <em>r, </em>the 
+  value at column <em>c</em> is given by the following formula:</p>
+
+$$v(c) = \binom{r}{c} = \frac{r}{c!(r-c)!}$$
+
+<p>Perhaps more interestingly, you can calculate the same value without resorting to the 
+  factorial by using the following recursive formula (where <em>r'&nbsp;</em>is the row number <em>+1</em> and &nbsp;<em>c</em> is the column index):</p>
+
+$$\begin{align*}
+v(c) &= v(c-1) \frac{r'-c}{c} \\
+v(0) &= 1
+\end{align*}$$
+
+<h2>Solution</h2>
+<p>So, after all this analysis, the solution comes up to be quite simple and maybe 
+  not that interesting <em>per se</em>. The recursive formula to calculate the values from the triangle's 
+  rows fits naturally the F# pattern matching:</p>
+
+{% highlight F# %}
+
+let rec pascal_item row_plus_one column = 
+    match column with
+    | 0L -> 1L 
+    | _-> (row_plus_one-column) * (pascal_item row_plus_one (column-1L)) / column
+
+
+let number_of_routes grid_size =
+    pascal_item (int64(2*grid_size + 1)) (int64 grid_size)
+{% endhighlight %}

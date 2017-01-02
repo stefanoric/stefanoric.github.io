@@ -1,0 +1,82 @@
+---
+layout: post
+title: Project Euler Problem 16 in F#
+date: 2010-12-12 15:10:15.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- ".NET"
+- F#
+tags:
+- algorithm
+- F#
+- functional
+meta:
+  _edit_last: '1'
+  dsq_thread_id: '190064635'
+  _wp_old_slug: ''
+  _aioseop_title: Project Euler Problem 16 in F#
+  _aioseop_keywords: f#,fsharp,euler,algorithm, bigint
+  _aioseop_description: A solution to Project Euler problem 16 in F#
+---
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<p>It's time for another Project Euler exercise. This time around it is problem 16:</p>
+<blockquote>
+<p>2<sup>15</sup> = 32768 and the sum of its digits is 3 + 2 + 7 + 6 + 8 = 26.</p>
+<p>What is the sum of the digits of the number 2<sup>1000</sup>?</p>
+</blockquote>
+<h2>Analysis</h2>
+<p>I have tried to find an elegant way to solve this problem at a mathematical level, but I couldn't gain any 
+  insight relating powers of 2 to their representation in base 10 (I'd love to know if such a thing exists). 
+  Therefore I resorted to solve this problem with brute force.</p>
+
+<p>Luckily F# (and now all other .NET 4.0 cousin languages) sports the <code>BigInteger</code> numeric type which helps 
+tackling such huge numbers.</p>
+
+<p>There are basically two approaches to solve this problem:</p>
+
+<ul>
+<li>Transform the result of exponentiation into a <em>string</em> and iterate through the string adding up all the individual digits, or</li>
+<li>Do without strings, and decompose the big number into the individual digits on my own.</li>
+</ul>
+
+<p>I have decided to take the second route because it seemed like a more interesting exercise (the first approach could probably lead to a one-liner). </p>
+
+<p>Let's consider a generic number \(n\) and consider how we can describe it as a sum of powers of 10:</p>
+$$ n = \sum_{i=0}^k d_i10^i $$
+
+<p>For example</p>
+
+$$ 423 = 3 \cdot 10^0 + 2\cdot 10^1 + 4 \cdot 10^2 $$
+
+<p>and \( k = 2, d_0 = 3, d_1 = 2, d_2 = 4 \)
+
+<p>So, given a generic number \(n\), we need to find the highest power of ten (\(k\)) such that 
+  \(\frac{n}{10^k} > 0\)
+</p>
+<p>(logarithms will help us there). After \(k\) is found, we can start diving \(n\) by \(10^k\) to find \(d_k\) and use 
+the reminder of the division to calculate \(d_{k-1}\) and so forth until we reach \(d_0\).</p>
+<h2>Solution</h2>
+
+{% highlight F# %}
+open System
+open System.Numerics
+
+let rec decompose_rec n power_of_ten accu =
+    match power_of_ten with
+        | i when i = 1I -> accu @ [n]
+        |_ ->
+            let d = n / power_of_ten
+            let digits = accu @ [d]
+            decompose_rec (n - (d * power_of_ten)) (power_of_ten / 10I) digits
+
+let decompose n =
+    let power = floor (log10 (float n))
+    let initial_power_of_ten = BigInteger.Pow(10I, int32 power)
+    decompose_rec n initial_power_of_ten []
+
+let sum_digits n =
+    decompose n |> List.sum
+
+{% endhighlight %}

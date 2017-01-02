@@ -1,0 +1,37 @@
+---
+layout: post
+title: Retry patterns with RestSharp clients
+date: 
+type: post
+published: false
+status: draft
+categories: []
+tags: []
+meta:
+  _edit_last: '1'
+  _publicize_twitter_user: "@stefanoric"
+author:
+  login: stefanoricciardi
+  email: stefano.ricciardi@gmail.com
+  display_name: stefanoricciardi
+  first_name: ''
+  last_name: ''
+---
+<p>In this post we will explore how to make <a href="http://restsharp.org/">RestSharp </a>more robust and go from using it like this:</p>
+<pre class="brush:csharp">var response = restclient.Execute(request);
+</pre>
+<p>to something like this (and more complex variations) using <a href="https://github.com/michael-wolfenden/Polly">Polly</a>:</p>
+<pre class="brush:csharp">var response =
+Policy
+.Handle&lt;TimeoutException&gt;()
+.Retry()
+.Execute(() =&gt; restclient.Execute(request));
+</pre>
+<h3>The Problem</h3>
+<p>Developing applications for the cloud, especially when consuming other (micro)services via HTTP endpoints, exposes the developer to the risks of <strong>transient failures,</strong> which can be caused by network hiccups, servers being overloaded, requests being throttled, etc...</p>
+<p>In order to try and overcome these failures, we should code our clients in such a way that, whenever appropriate, a request is attempted again up to a certain number of times (possibly implementing some form of <a href="http://en.wikipedia.org/wiki/Exponential_backoff">exponential backoff</a>).</p>
+<p>Writing such kind of code is not particularly complicated, but this is a solved problem and therefore you probably should not reinvent the wheel.</p>
+<h3>Along Came Polly</h3>
+<p><a href="https://github.com/michael-wolfenden/Polly">Polly</a> is one of the many libraries in the .NET ecosystem dealing with the <a href="https://msdn.microsoft.com/en-gb/library/dn589788.aspx">retry pattern</a> (including <a href="https://msdn.microsoft.com/en-gb/library/dn589784.aspx">circuit breaker</a> support).</p>
+<p>The example at the top shows that with just a few lines of code we can ask Polly to issue a REST request and to retry once if a timeout exception is raised. Of course, you usually may want to try something a bit more sophisticated:</p>
+<p>&nbsp;</p>

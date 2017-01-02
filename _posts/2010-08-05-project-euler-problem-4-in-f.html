@@ -1,0 +1,71 @@
+---
+layout: post
+title: Project Euler Problem 4 in F#
+date: 2010-08-05 13:49:37.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- ".NET"
+- F#
+tags:
+- algorithm
+- F#
+- functional
+meta:
+  _edit_last: '1'
+  ks_metadata: a:7:{s:4:"lang";s:2:"en";s:8:"keywords";s:48:"euler,palindrome,palindromic,algorithm,f#,fsharp";s:19:"keywords_autoupdate";s:1:"0";s:11:"description";s:29:"Project
+    Euler Problem 4 in F#";s:22:"description_autoupdate";s:1:"0";s:5:"title";s:29:"Project
+    Euler Problem 4 in F#";s:6:"robots";s:12:"index,follow";}
+  _aioseop_title: Project Euler Problem 4 in F#
+  _aioseop_description: Project Euler Problem 4 in F#
+  _aioseop_keywords: euler, palindrome, palindromic, algorithm, f#, fsharp
+  _wp_old_slug: ''
+  dsq_thread_id: '150392559'
+---
+<p><a href="http://projecteuler.net/index.php?section=problems&id=4">Project Euler problem number 4</a> asks 
+the following:</p>
+<blockquote><p>
+A palindromic number reads the same both ways. The largest palindrome made from the product of 
+two 2-digit numbers is 9009 = 91 × 99.</p>
+<p>Find the largest palindrome made from the product of two 3-digit numbers.
+</p></blockquote>
+<p>Here follows my solution:</p>
+
+{% highlight F# %}
+open System
+
+let rec is_palindromic (a:string) =
+    let length = a.Length;
+    match a with
+        | &quot;&quot;  -> true
+        | x -> match length with
+                 | 1 -> true
+                 | _ -> x.[0] = x.[length-1] && 
+                       is_palindromic (x.Substring(1,(length - 2)))
+                 
+let max_palindrome =
+    let numbers = seq {
+        for i in 100 .. 999 do
+            for j in 100 .. 999 do
+                if is_palindromic(Convert.ToString(i*j)) then yield (i*j) }
+    Seq.max numbers
+{% endhighlight %}
+
+<p>A few considerations:</p>
+<ul>
+<li>I first define a general recursive function to determine whether a given string is a palindrome.
+<p>I basically check the first and last characters of the string; if they are the same I continue with 
+  the second and second last, and so on until I either found a pair of chars that do not match or there's 
+  only one char or none left.</p>
+<p> Alternatively, I could have reversed the string and compared the original and reversed 
+  strings for equality; however that would have been not just more work than 
+  actually needed by the algorithm, but less useful as an excercise in learning F#.</p>
+</li>
+<li> The actual algorithm uses brute force to test for palindromicity (neologism?) all 
+  the numbers that can be composed multiplying together 3 digits numbers (those from 100 to 999), 
+  picking the highest one. Again, as in a previous <a href="/2010/07/01/project-euler-problem-3-in-f/">problem</a>, 
+  I am using <a href="http://en.wikipedia.org/wiki/List_comprehension#F.23">comprehension</a> 
+  to generate a list of candidates.
+</li>
+</ul>

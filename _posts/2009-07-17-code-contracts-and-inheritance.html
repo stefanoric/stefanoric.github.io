@@ -1,0 +1,240 @@
+---
+layout: post
+title: Code Contracts and Inheritance
+date: 2009-07-17 00:10:00.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- ".NET"
+tags:
+- C#
+- design
+- OOP
+meta:
+  _edit_last: '1'
+  _wpas_skip_twitter: '1'
+  dsq_thread_id: '150293523'
+---
+<h3>The Liskov Substitution Principle</h3>
+<p>This is the third post on a mini-series about Microsoft Code Contracts and why you should use it to write more robust and reusable code.</p>
+<p>After introducing <a href="/2009/06/26/introduction-to-microsoft-code-contracts-with-visual-studio-2008/">pre and post-conditions</a> and <a href="/2009/07/01/code-contracts-invariants/">invariants</a>, it’s now time to discuss one of the most powerful concepts of the Design by Contract, that is <em>contracts inheritance</em>. The importance of the interactions between contracts and inheritance is described in one of the cornerstone concepts of Object Oriented Programming, that goes under the name of the <strong>Liskov Substitution Principle:</strong></p>
+<blockquote><p>If for each object o1 of type S there is an object o2 of type T such that for all programs P  defined in terms of T, the behavior of P is unchanged when o1 is substituted for o2 then S is a subtype of T.</p></blockquote>
+<p>This is a definition of how <strong>polymorphism</strong> through inheritance is meant to work: it must always be possible to use an instance of a child class <em>in lieu</em> of a parent class without the client knowing about it.</p>
+<p>Let’s make a simple example. Suppose we define a service to reverse the content of a string. We can have a simple implementation of that class in the following terms:</p>
+
+{% highlight C# %}
+public class StringReverser
+{
+  public virtual string Reverse(string inputString)
+  {
+     // a simple algorithm optimized for
+     // low memory consumption
+  }
+}
+{% endhighlight %}
+
+<p>Notice how the <code>Reverse</code> method has been defined as virtual. This makes it possible to subclass and replace the implementation of the method with an algorithm that is faster (possibly trading off some memory; we are not concerned here with the nitty-gritty details of the actual 
+implementation).</p>
+
+{% highlight C# %}
+public class FastStringReverser : StringReverser
+{
+  public override string Reverse(string inputString)
+  {
+     // a fast algorithm implementation
+     // using a bit more memory
+  }
+}
+{% endhighlight %}
+
+<p>We introduce a factory whose responsibility is creating an object that knows how to reverse a string:</p>
+
+{% highlight C# %}
+public class ReverserFactory
+{
+  public static StringReverser GetReverser()
+  {
+    // here we have the logic to decide which kind of Reverser to create
+    return new StringReverser();
+  }
+}
+{% endhighlight %}
+
+<p>Finally, we have client class that, for whatever reason, needs to reverse a string.</p>
+{% highlight C# %}
+public class Client
+{
+  public void SomeMethod()
+  {
+    StringReverser reverser = ReverseFactory.GetReverser();
+    string reversed = reverser.reverse("Contracts are fun");
+    // do something with the reversed string
+  }
+}
+{% endhighlight %}
+
+<p>In this case the <code>Client</code> class uses (<em>unknowingly</em>) an instance of a <code>StringReverser</code> class (which is the base class listed above). Since <code>FastStringReverser</code> is a subclass of <code>StringReverser</code>, if we rewrite the factory to return an instance of <code>FastStringReverser</code>, Client will continue to work:</p>
+
+{% highlight C# %}
+public class ReverserFactory
+{
+  public static StringReverser GetReverser()
+  {
+    // now we return the fast implementation.
+    // In a real world example, there will be some logic to decide
+    // which class to instantiate according to the context,
+    // configuration files, input parameters, etc...
+    return new FastStringReverser();
+  }
+}
+{% endhighlight %}
+
+<p>So here we see the LSP in action. Referring to the definition at the 
+  top of this post, we have the following correspondences:</p>
+<ul>
+<li><code>StringReverser</code> represents type T (the base type)</li>
+<li><code>FastStringReverser</code> represents type S (the sub type)</li>
+<li><code>Client</code> represents P (the code using T or a subtype of T)</li>
+</ul>
+<p>Note: here I have presented the example subclassing from a base class with a 
+  virtual method to match more closely the standard definition of the LSB. Even more common, 
+  though, is that T represents an <em>interface</em> and that two or more concrete 
+  classes implement that interface. The client will have a handle to such an interface 
+  and the actual implementation will be provided either by a factory method, service 
+  locator or through dependency injection.</p>
+<p>The LSP is violated, for example, whenever a client class has some logic dealing 
+  with the particular type of the implementation (such as <a href="http://en.wikipedia.org/wiki/Run-time_type_information">Run 
+  Time Type Identification</a>: if the actual type is this, then do that, otherwise 
+  do that other thing - or something along this line).</p>
+<h3>LSP and Contracts</h3>
+<p>Unfortunately, there are much more subtle ways in which the LSP can be violated, 
+  even if the client code is "well behaving" as in the example above. The classical 
+  example goes under the name "A Square is Not A Rectangle". 
+  <a href="http://www.mathsisfun.com/definitions/rectangle.html">According to geometry</a>, a square <i>is</i> a rectangle, 
+  but when it comes to software design... it is not!</p>
+<p>The basic problem is that a square has an additional <em>invariant</em> with respect to the 
+rectangle, which is that all the sides are equal and because of that you cannot independently 
+change the height and the width like you would do with a rectangle; so if you have 
+a <code>SetHeight</code> and <code>SetWidth</code> methods in the Rectangle, 
+the Square should override those so that the invariant is always maintained: when the 
+height is set by a client, internally the width is also set and vice versa. But the 
+client might not expect this to happen! The client might make assumptions like the following:</p>
+
+{% highlight C# %}
+// use a factory to create a rectangle passing width and height
+Rectangle r = RectangleFactory.GetRectangle(4,5);
+
+// change the dimensions
+r.Width = 10;
+// verify new dimensions
+Assert.AreEqual(r.Width, 10);
+Assert.AreEqual(r.Height, 5);
+
+r.Height = 12;
+// verify new dimensions
+Assert.AreEqual(r.Width, 10);
+Assert.AreEqual(r.Height, 12);
+{% endhighlight %}
+
+<p>It's easy to see that if the factory returns a Square, which internally always adjust one side to be equal to the other one, some of the assertions would fail. This means that the expectations of the client of dealing with a Rectangle square are no longer met, and the LSP is thus violated.<br />
+A way to make it clear what really "being a rectangle" is meant to be is to introduce some contracts on the base class:</p>
+
+{% highlight C# %}
+public class Rectangle
+{
+  private double width;
+  private double height;
+
+  public Rectangle(double w, double h) { width = w; height = h; }
+
+  public virtual double Width
+  {
+    get { return width; }
+    set
+    {
+      double oldHeight = height;
+      width = value;
+      // ensure that height has not changed
+      Contract.Ensures(oldHeight = height);
+    }
+  }
+
+  public virtual double Height
+  {
+    get { return height; }
+    set
+    {
+      double oldWidth = width;
+      height = value;
+      // ensure that width has not changed
+      Contract.Ensures(oldWidth = width);
+    }
+  }
+}
+{% endhighlight %}
+
+<p>Now, when it comes to inheriting from a class which specify some contracts, Design By Contract 
+  specifies the following <em>behavioral subtyping</em>:</p>
+<ul>
+<li> If a subclass overrides the behavior of a method of a base class (or implements and interface), 
+  the <em>preconditions</em> it specifies can only be equivalent to or <em>weaker</em> than the base class</li>
+<li> If a subclass overrides the behavior of a method of a base class (or implements and interface), 
+  the <em>postconditions</em> it specifies can only be equivalent to or <em>stronger</em> than the base class.</li>
+</ul>
+<p>This mean that any potential subclass of <code>Rectangle</code> needs to satisfy 
+the postconditions in each of his methods (and possibly add more). This explicitly rules out <code>Square</code> 
+from being a candidate subclass (since a square cannot guarantee that changing one side does not affect the other).</p>
+<p>It's interesting to note that, quite symmetrically, the preconditions of a base class can only be weaker; 
+  this makes sense especially from the client perspective: if subclasses were allowed to 
+  require more stringent preconditions, a client might fail to meet some precondition and 
+  thus stop working when a service implementation is substituted with another, which is a clear 
+  violation of the LSP, which is all about <em>transparency</em>.</p>
+<h3>Specifying Contracts for Interfaces and Abstract Classes</h3>
+<p>In the example above, <code>Rectangle</code> was a concrete class with some virtual method. 
+But how do you specify contracts with Microsoft Code Contracts for interfaces or abstract 
+methods which do not have a concrete implementation?</p>
+<p>For interfaces, you need to create a dummy class implementing the interface 
+  and link them through Attributes, like the following:</p>
+  
+{% highlight C# %}
+[ContractClass(typeof(IStringReverser))]
+interface IStringReverser
+{
+  string Reverse(string s);
+}
+
+[ContractClassFor(typeof(IStringReverser))]
+sealed class StringReverserContract : IStringReverser
+{
+  string Reverse(string s)
+  {
+    Contract.Requires(s != null);
+    return String.Empty; // dummy return value
+  }
+}
+{% endhighlight %}
+
+<p>Note how you have to use explicit interface implementation and the use of a dummy return value.</p>
+<p>For abstract methods it's similar:</p>
+
+{% highlight C# %}
+[ContractClass(typeof(StringReverser))]
+abstract class StringReverser
+{
+  public abstract string Reverse(string s);
+}
+
+[ContractClassFor(typeof(StringReverser))]
+abstract class StringReverserContract : StringReverser
+{
+  public override string Reverse(string s)
+  {
+    Contract.Requires(s != null);
+    return String.Empty; // dummy return value
+  }
+}
+{% endhighlight %}
+
+<p>I urge you to refer to <a href="http://research.microsoft.com/en-us/projects/contracts/userdoc.pdf">Microsoft 
+Code Contracts documentation</a> for more information on how to specify contracts for interfaces and abstract methods.</p>

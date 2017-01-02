@@ -1,0 +1,93 @@
+---
+layout: post
+title: Making WCF Serializer Work with Circular References
+date: 2009-10-22 14:07:43.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- WCF
+tags:
+- C#
+- design
+- SOA
+- WCF
+meta:
+  _edit_last: '1'
+  _wpas_skip_twitter: '1'
+  ks_metadata: a:7:{s:4:"lang";s:2:"en";s:8:"keywords";s:64:"node,children,public,datacontract,datamember,class,set,following";s:19:"keywords_autoupdate";s:1:"1";s:11:"description";s:157:"Node
+    { [DataMember(Name="Children", Order=2)] private IListNode children;
+    [DataMember(Name="Id", Order=0)] public string Id { get; set; }";s:22:"description_autoupdate";s:1:"1";s:5:"title";s:0:"";s:6:"robots";s:12:"index,follow";}
+  dsq_thread_id: '149554632'
+  wpsd_autopost: '1'
+---
+<h3>The Problem of Circular References</h3>
+<p>Recently I had to model a tree-like structure using a variation of the GoF 
+    <a href="http://en.wikipedia.org/wiki/Composite_pattern" title="Composite Design Pattern">composite design pattern</a> and to pass this class to a WCF service for further processing. The class has circular reference as described by the 
+    following drawing: <img alt="Example of a Node Recursion" class="aligncenter size-full wp-image-474" height="117" src="{{ site.baseurl }}/assets/noderecursion.gif" title="Example of a Node Recursion" width="219" /> 
+    Therefore off I went to naively create my <strong>DataContract</strong> along the following lines:</p>
+    
+{% highlight C# %}
+[DataContract(Namespace = "http://schemas.acme.it/2009/10"]
+public class Node
+{
+    [DataMember(Name="Children", Order=2)]
+    private IList<Node> children;
+
+    [DataMember(Name="Id", Order=0)]
+    public string Id { get; set; }
+
+    [DataMember(Name="Parent", Order=1)]
+    public Node Parent { get; set; }
+
+    public Node()
+    {
+        children = new List<Node>()
+    }
+
+    public void AddChild(Node node)
+    {
+        this.children.Add(node);
+        node.Parent = this;
+    }
+
+    public IList<Node> Children
+    {
+        get
+        {
+            IList<Node> result = new List(this.children);
+            foreach (Node child in this.children)
+            {
+                foreach (Node innerChild in child.Children)
+                {
+                result.Add(innerChild);
+                }
+            }
+
+            return result;
+        }
+    }
+}
+{% endhighlight %}
+
+<p>Unfortunately at run time I was greeted by the following exception: 
+    <code>Object graph for type 'System.Collections.Generic.List`1[[Node ...]]' contains cycles and cannot be serialized if reference tracking is disabled.</code></p>
+<h3>The Solution</h3>
+<p>Reading around I realized that up until some time ago you had to implement your own 
+    <strong>DataContractSerializer</strong> (see for example this 
+    <a href="http://blogs.msdn.com/sowmy/archive/2006/03/26/561188.aspx">post </a> by Sowmy Srinivasan). Luckily, it turns out that with NET 3.5 SP1 everything is much simpler: you just have to use the <strong>IsReference</strong> 
+    parameter in the <strong>DataContract</strong> attribute, as follows:</p>
+
+{% highlight C# %}
+[DataContract(Namespace = "http://schemas.acme.it/2009/10", IsReference=true)]
+public class Node
+{
+    // everything same as in the example above.
+}
+{% endhighlight %}
+
+<h3>The Catch</h3>
+<p>For some reason, if you turn on the <strong>IsReference</strong> attribute, 
+then you <em>cannot </em>set the <strong>IsRequired</strong> 
+attribute to <code>true</code> on <em>any</em> <strong>DataMember</strong> 
+of the DataContract. The reason is somehow explained <a href="http://social.msdn.microsoft.com/Forums/en-US/wcf/thread/e5d38e14-31b0-4991-a988-d578c564e92d">here</a>.
