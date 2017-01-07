@@ -51,8 +51,6 @@ exclude:
   - Gemfile.lock
 include: ["_pages"]
 
-paginate: 3
-
 permalink: /:year/:month/:day/:title/
 
 defaults:
