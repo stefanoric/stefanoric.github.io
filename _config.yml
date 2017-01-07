@@ -14,17 +14,31 @@
 # You can create any custom variable you would like, and they will be accessible
 # in the templates via {{ site.myvariable }}.
 title: Stefano Ricciardi
-#email: stefano.ricciardi@gmail.com
-description: > # this means to ignore newlines until "baseurl:"
-     Stefano Ricciardi on Software Development
-baseurl: "" # the subpath of your site, e.g. /blog
-url: "" # the base hostname & protocol for your site, e.g. http://example.com
+name: Stefano Ricciardi
+description: Stefano Ricciardi on Software Development
+baseurl: # the subpath of your site, e.g. /blog
+url: # the base hostname & protocol for your site, e.g. http://example.com
 twitter_username: stefanoric
 github_username:  stefanoric
 
-disqus:
-    shortname: my_disqus_shortname
-google_analytics: UA-15612899-1
+# Site owner
+author:
+  name                   : "Stefano Ricciardi"
+  url                    : "https://stefanoricciardi.com/about/"
+  bio                    : "Just another software developer"
+  picture                : "/assets/bw_avatar_128x128.jpg"
+  twitter                : "stefanoric"
+  github                 : "stefanoric"
+
+comments:
+  provider: disqus
+  disqus:
+    shortname: stefanoricciardicom
+
+analytics:
+  provider: google
+  google:
+    tracking_id: "UA-15612899-1"
 
 # Build settings
 markdown: kramdown
@@ -37,4 +51,20 @@ exclude:
   - Gemfile.lock
 include: ["_pages"]
 
+paginate: 3
+
 permalink: /:year/:month/:day/:title/
+
+defaults:
+  # _posts
+  - scope:
+      path: ""
+      type: posts
+    values:
+      layout: single
+      author_profile: true
+      read_time: true
+      comments: true
+      share: true
+      related: true
+

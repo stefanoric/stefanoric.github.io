@@ -202,6 +202,7 @@ PLATFORMS
 
 DEPENDENCIES
   github-pages
+  jekyll (~> 3.3.0)
   minimal-mistakes-jekyll
 
 BUNDLED WITH
