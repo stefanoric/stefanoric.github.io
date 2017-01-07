@@ -1,6 +1,6 @@
 # main links
 main:
   - title: "About"
-    url: https://stefanoric.github.io/about/
+    url: /about/
   - title: "Small Print"
-    url: https://stefanoric.github.io/small-print/
+    url: /smallprint/

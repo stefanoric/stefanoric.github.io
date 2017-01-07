@@ -9,10 +9,7 @@
 # 'bundle exec jekyll serve'. If you change this file, please restart the server process.
 
 # Site settings
-# These are used to personalize your new site. If you look in the HTML files,
-# you will see them accessed via {{ site.title }}, {{ site.email }}, and so on.
-# You can create any custom variable you would like, and they will be accessible
-# in the templates via {{ site.myvariable }}.
+locale: "en"
 title: Stefano Ricciardi
 name: Stefano Ricciardi
 description: Stefano Ricciardi on Software Development
@@ -24,6 +21,7 @@ github_username:  stefanoric
 # Site owner
 author:
   name                   : "Stefano Ricciardi"
+  location               : London, UK
   url                    : "https://stefanoricciardi.com/about/"
   bio                    : "Just another software developer"
   picture                : "/assets/bw_avatar_128x128.jpg"
@@ -42,8 +40,6 @@ analytics:
 
 # Build settings
 markdown: kramdown
-#theme: minima
-#theme: minimal-mistakes-jekyll
 gems:
   - jekyll-feed
 exclude:
@@ -54,6 +50,14 @@ include: ["_pages"]
 permalink: /:year/:month/:day/:title/
 
 defaults:
+  # _pages
+  - scope:
+      path: ""
+      type: pages
+    values:
+      layout: single
+      comments: false
+      share: false
   # _posts
   - scope:
       path: ""
