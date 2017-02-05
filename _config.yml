@@ -38,6 +38,9 @@ analytics:
   google:
     tracking_id: "UA-15612899-1"
 
+# seo
+google_site_verification: "MHtZpyDb4yWXlvLLGWVYvQrma4L_XLy3kPf1UaIqtrY"
+
 # Build settings
 markdown: kramdown
 gems:
