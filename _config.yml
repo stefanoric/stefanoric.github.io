@@ -45,6 +45,7 @@ google_site_verification: "MHtZpyDb4yWXlvLLGWVYvQrma4L_XLy3kPf1UaIqtrY"
 markdown: kramdown
 gems:
   - jekyll-feed
+  - jekyll-seo-tag
 exclude:
   - Gemfile
   - Gemfile.lock
