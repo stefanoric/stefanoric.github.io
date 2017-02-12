@@ -1,6 +1,7 @@
 ---
 layout: single
 title: Firefox, Fiddler and HTTPS
+description: How fiddler can cause issues with Firefox using HTTPS.
 date: 2014-01-17 09:39:23.000000000 +00:00
 type: post
 published: true
@@ -16,11 +17,7 @@ tags:
 meta:
   _aioseop_title: Firefox, Fiddler and HTTPS
   _edit_last: '1'
-  _aioseop_description: Firefox, Fiddler and HTTPS interaction problems
   dsq_thread_id: '2133350240'
-  _wpas_done_all: '1'
-  wpsd_autopost: '1'
-  _aioseop_keywords: Firefox, Fiddler, HTTPS, problems
 ---
 <p>Today I was debugging some interaction between one of our products and Twitter 1.1 API protected by OAuth 1.0a . As it happens, I was using Fiddler to have a look at tokens being passed back and forth.</p>
 <p>As I finished my debug session, I forgot to turn off Fiddler session and wanted to check my emails on gmail. I was getting warnings by Firefox about google SSL certificate chain not being valid. Strange. Then I moved to Facebook and there I also had all kind of problems. After adding an exception for Facebook.com to the SSL trust (!) I was able to open the site, but as text only without any additional resource (images, css): you can imagine what Facebook site looked like. I could not even browse to support.mozilla.org because Firefox did not even trust that side (ironically enough...)!</p>
