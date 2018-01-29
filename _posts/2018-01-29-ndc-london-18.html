@@ -1,0 +1,170 @@
+---
+layout: single
+title: 'Notes NDC London 2018'
+description: 'Some notes from NDC London 2018'
+date: 2018-01-29 20:00:00.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Reviews
+tags: []
+meta:
+---
+
+
+## The Power of Composition
+Speaker: [Scott Wlaschin](http://twitter.com/ScottWlaschin)  
+Slides: [The Power of Composition](https://fsharpforfunandprofit.com/composition/)
+
+Scott is a great speaker, with the right dose of British humor so I was happy
+to find him at NDC with a new talk.
+
+This was a beginner-level introduction to composition in functional programming
+by Scott Wlaschin, using F# to illustrate the examples.
+
+Using Lego and wooden railways as metaphors, he illustrates how to compose
+functions to create services, how to combine services to create use cases and
+how to combine use cases you can create an application using
+[Suave.io](https://suave.io), a "lightweight, non blocking web server".
+
+He goes on to de-mystify the "M word" showing how you can use functional
+composition to solve the Fizz Buzz problem.
+
+
+## API Gateway to Service Mesh: Navigating a Changing Landscape
+Speaker: [Zhamak Dehghani](https://twitter.com/zhamakd)
+
+The talk introduced some ideas about what a service mesh is and why you might
+want one for cloud native applications.
+
+In order to satisfy the needs of a cloud native set of applications (dynamic
+discovery, load balancing, resiliency, traffic management, observability,
+identity) you often end up having to develop client libraries for all the
+technology stacks you want to support (NodeJs, Java, .NET, etc...). 
+
+As an alternative you can have a service proxy (sidecar) so that traffic goes
+through it. (such as [Envoy](https://www.envoyproxy.io/). There is still a
+problem with this approach that configuration needs to be replicated across all
+services.
+
+A step forward is to have a service mesh like [Istio](https://istio.io) to
+provide visibility, resiliency, security and control for you micro-services
+deployed in your container orchestrator.
+
+Further references:
+
+* [What's a service mesh? And why do I need one?](https://buoyant.io/2017/04/25/whats-a-service-mesh-and-why-do-i-need-one/)
+
+## Diagnosing Issues in ASP.NET Core applications
+Speakers: [David Fowler](https://twitter.com/davidfowl) and [Damian
+Edwards](https://ndc-london.com/speaker/damian-edwards)  
+Slides and code samples: https://github.com/davidfowl/NdcLondon2018
+
+This was an interesting hands-on session on how to troubleshoot asp.net core
+bugs, with specific emphasis on what has changed with ASP.NET and might cause
+problems when porting code over.
+
+Slides and example code are available on github. They mentioned an interesting
+tool ([Ben.BlockingDetector](https://github.com/benaadams/Ben.BlockingDetector))
+to detect blocking calls in ASP.NET core applications.
+
+Takeaways:
+
+* porting over code from ASP.NET to ASP.NET core might cause synchronization
+  bugs (deadlocks or thread starvation) if you are not careful.
+
+* async all the things
+
+* asynchronicity is viral (you cannot do it in parts)
+
+* audit 3rd party code
+
+
+## The Performance Investigator Field Guide
+Speaker: [Sasha Goldshtein](https://twitter.com/goldshtn)  
+Slides: https://t.co/By96ByJifg
+
+Interesting talk about how to structure your investigation on performances
+issues, what step to follows and what to do after you've fixed the issue.
+
+Key takeaways:
+
+* don't make assumptions
+
+* don't just look under the street-light (where you have visibility)
+
+* averages are meaningless, percentiles are OK you know what you are doing
+
+
+## Critical Decision Making
+Speaker: [Clifford Agius](https://twitter.com/cliffordagius) (airline pilot and geek)
+
+This interesting talk describes a decision making tool (TDODAR) airline pilots
+use to make effective decisions under pressure (think during an incident).
+
+Key takeaways:
+
+* Most situations are rule-based: you should already know what you best response
+  should be given a situation, instead of coming up with a clever idea when you
+  are handling an emergency.
+  
+* Work as a team, solicit inputs from all members (even the less experienced),
+  and decide together the best response.
+
+
+## Testing in Production (the Good, the Bad and the Less Pretty)
+Speaker: Gel Goldsby
+
+TL;DR: Speaker's team integration tests took to long to run, slowing the release
+cycle so they decided to skip the tests in the staging environments; they moved
+the test execution after releasing to production and rolling back in case
+something was wrong (anecdotally, this happens for them about once per month).
+
+Requirements for this to work:
+
+* releases only contain one commit, to simplify rollbacks
+
+* tons of logging, monitoring and alerting. 
+
+* full cycle developers (coder/tester/deployer/business analyst/on-call)
+
+They usually allow the next release to happen after about 1 hour.
+
+
+This was the talk that raised the most questions from the audience of all the
+ones I attended to, like what happens when the release corrupts the data? The
+gist of the answer was that this does not apply to all kind of software, so they
+usually can get away with software rollbacks only but that does not mean that
+anyone can.
+
+
+## Harnessing Chaos: the hidden ingredient behind building better systems
+Speaker: [Russ Miles](https://twitter.com/russmiles)
+
+The author (after an amusing musical intro) starts describing the [Cynefim
+framework](https://en.wikipedia.org/wiki/Cynefin_framework) where problems are
+categorized in four quadrants (Simple, Complicate, Complex and Chaotic) and
+making the point that if you are building microservices you are probably living
+in the chaotic quadrant.
+
+The goal of chaos engineering is try to move away from chaos into the complex
+quadrant and that a better definition not to scare the business would be
+"limited scope, continuous disaster recovery".
+
+Key takeaways:
+
+* it's about learning, not harming your system.
+
+* chaos should not be a surprise. It starts with a conversation, you cannot just
+  "break things".
+
+* if you already know the consequences, don't do the experiment. If you know
+  that it will break, there is nothing to learn.
+
+
+References:
+
+* [Chaos Engineering for the Business](https://medium.com/russmiles/chaos-engineering-for-the-business-17b723f26361)
+
+* [The Chaos Toolkit](https://github.com/chaostoolkit/chaostoolkit)
